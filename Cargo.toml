@@ -13,7 +13,6 @@ serde_derive = "1.0.147" # Needed for TOML parsing.
 zip          = "0.6.3"   # Needed for decompressing plugins.
 toml         = "0.5.0"   # Config file language for plugins.
 libloading   = "0.7"     # Used to instanciate the module.
-console      = "0.15.2"  # For modifying error messages in the console.
 cfg-if       = "1.0.0"   # Used because Rust's macros suck
 log          = "0.4.17"  # Used as a way to print errors.
 
