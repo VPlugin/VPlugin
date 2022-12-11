@@ -16,9 +16,8 @@
 
 extern crate libloading;
 use std::ffi::{c_void, c_int};
-use crate::error::MessageLevel::*;
 use libloading::Symbol;
-use crate::error::{VPluginError, print_msg};
+use crate::error::VPluginError;
 
 use super::plugin::Plugin;
 
@@ -153,21 +152,7 @@ impl PluginManager {
         /// `drop` on the plugin manager though automatically.
         pub extern fn shutdown(mut self) {
                 for plugin in self.plugin.iter_mut() {
-                        print_msg(
-                                &format!(
-                                        "Calling destructor for plugin '{}'",
-                                        plugin.metadata.as_ref().unwrap().name
-                                ),
-                                Logging
-                        );
                         if plugin.terminate().is_err() {
-                                print_msg(
-                                        &format!(
-                                                "Plugin '{}' doesn't have a destructor, forcing termination.",
-                                                plugin.metadata.as_ref().unwrap().name
-                                        ),
-                                        Warning
-                                );
                                 plugin.force_terminate();
                         }
                 }

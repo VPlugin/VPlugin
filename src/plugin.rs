@@ -31,11 +31,7 @@ use libloading::{
 };
 use zip::ZipArchive;
 use crate::VHook;
-use crate::error::{
-        VPluginError,
-        print_msg
-};
-use crate::error::MessageLevel::*;
+use crate::error::VPluginError;
 use std::io::ErrorKind::*;
 
 /// This is purely for deserialization.
@@ -192,10 +188,6 @@ impl Plugin {
                         raw = match Library::new("./raw.so") {
                                 Ok (v) => v,
                                 Err(_) => {
-                                        print_msg(
-                                                "This plugin is not valid, stopping here.",
-                                                Critical
-                                        );
                                         return Err(VPluginError::InvalidPlugin)
                                 }
                         }
@@ -209,14 +201,6 @@ impl Plugin {
                         raw     : Some(raw),
                         archive,
                 };
-
-                print_msg(
-                        &format!(
-                                "All done, the plugin {} is now successfully loaded.",
-                                filename
-                        ),
-                        Logging
-                );
                 Ok(plugin)
         }
 
@@ -263,24 +247,11 @@ impl Plugin {
         pub fn load_metadata(&mut self) -> Result<(), VPluginError> {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
-                                print_msg(
-                                        &format!(
-                                                "Plugin {} validated, name: '{}', version: '{}'.",
-                                                v.filename,
-                                                v.name,
-                                                v.version
-                                        ),
-                                        Logging
-                                );
                                 self.is_valid = true;
                                 self.metadata = Some(v);
                                 Ok(())
                         },
                         Err(e) => {
-                                print_msg(
-                                        "Error validating plugin, returning before causing damage.",
-                                        Error
-                                );
                                 Err(e)
                         }
                 }
@@ -301,13 +272,6 @@ impl Plugin {
         /// the plugin was either not loaded, invalid, doesn't
         /// have a destructor function.
         pub fn terminate(&self) -> Result<(), VPluginError> {
-                print_msg(
-                        &format!(
-                                "Terminating and unloading plugin {}.",
-                                self.get_metadata().as_ref().unwrap().name
-                        ),
-                        Warning
-                );
                 if self.raw.is_none() {
                         return Err(VPluginError::InvalidPlugin);
                 }
@@ -332,12 +296,6 @@ impl Plugin {
 
         pub extern fn is_function_available(&self, name: &str) -> bool {
                 if self.raw.is_none() {
-                        print_msg(
-                                "
-                                Attempted to query whether a function is available on the plugin, but
-                                the plugin doesn't have an object file in the first place.
-                                ",
-                                Error);
                         return false;
                 }
                 unsafe {
