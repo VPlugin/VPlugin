@@ -1,0 +1,13 @@
+# Should ignore for libraries.
+Cargo.lock
+target
+
+# Extension of VPlugin plugins.
+<<<<<<< HEAD
+*.vpl
+=======
+*.vpl
+
+# Testing utility for VPlugin. Ignoring for now.
+/echo-rs
+>>>>>>> 59cd827 (Hello VPlugin !)
