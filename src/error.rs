@@ -14,10 +14,7 @@
  * limitations under the License.
 */
 
-extern crate console;
-use console::Style;
-
-/// ## **The generic error code enum**
+/// ## **Generic error code enum**
 /// 
 /// This enum represents possible errors that can occur while using
 /// VPlugin. They are usually an `Err` value on a `Result` enum returned
@@ -49,35 +46,4 @@ pub enum VPluginError {
         /// Internal error: See the `String` parameter
         /// to determine what the error is.
         InternalError(String),
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(C)]
-pub(crate) enum MessageLevel {
-        Logging,
-        Warning,
-        Error  ,
-        Critical
-}
-
-pub(crate) fn print_msg(msg: &str, errlvl: MessageLevel) {
-        let console_enabled = match std::env::var("VPLUGIN_ENABLE_MESSAGES") {
-                Ok(val) => val,
-                _               => String::from("0"),
-        };
-
-        if console_enabled == *"1" {
-                let msg_formatted = match errlvl {
-                        MessageLevel::Logging  => Style::new().bright(),
-                        MessageLevel::Warning  => Style::new().bright().yellow(),
-                        MessageLevel::Error    => Style::new().bright().red(),
-                        MessageLevel::Critical => Style::new().bright().red().bold(),
-                };
-
-                println!(
-                        "{} => {}",
-                        Style::new().bold().green().apply_to("VPlugin::Native  "),
-                        msg_formatted.apply_to(msg)
-                );
-        }
 }
