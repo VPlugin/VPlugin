@@ -4,7 +4,7 @@
         <img src="https://img.shields.io/crates/v/crate.svg&style=flat-square" alt="crates.io">
         <img src="https://img.shields.io/docsrs/vplugin?label=Documentation&style=flat-square">
         <img src="https://img.shields.io/github/license/AndroGR/VPlugin?style=flat-square">
-        <img src="https://github.com/AndroGR/VPlugin/actions/workflows/default.yml/badge.svg">
+        <img src="https://github.com/VPlugin/VPlugin/actions/workflows/default.yml/badge.svg">
         <br>
         <a href="https://vplugin.github.io/">Website</a> |
         <a href="https://github.com/AndroGR/VPlugin/issues">Issues</a> |
