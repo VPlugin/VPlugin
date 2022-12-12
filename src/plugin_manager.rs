@@ -150,15 +150,16 @@ impl PluginManager {
         /// ownership of the plugin manager, to ensure that the plugin manager
         /// will not be accidentally reused (Use after free). It does call
         /// `drop` on the plugin manager though automatically.
-        pub extern fn shutdown(mut self) {
-                for plugin in self.plugin.iter_mut() {
+        pub extern fn shutdown(self) {
+                for plugin in self.plugin.into_iter() {
                         if plugin.terminate().is_err() {
-                                plugin.force_terminate();
+                                unsafe {
+                                        plugin.force_terminate();
+                                }
                         }
                 }
 
                 drop(self.entry);
-                drop(self.plugin);
         }
 }
 
