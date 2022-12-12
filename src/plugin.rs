@@ -92,7 +92,8 @@ impl PluginMetadata {
                      filename   : plugin.filename.clone(),
                 };
 
-                let _ = match File::open("metadata.toml") {
+                log::trace!("Attempting to open the plugin metadata's file.");
+                let f = match File::open("metadata.toml") {
                         Ok(val) => val,
                         Err(e) => {
                                 log::debug!(target: "PluginMetadata", "Couldn't open metadata file (metadata.toml): {}", e.to_string());
@@ -109,11 +110,27 @@ impl PluginMetadata {
                         }
                 };
 
-                let buffer = String::new();
+                let contents = match std::io::read_to_string(f) {
+                        Ok(contents) => contents,
+                        Err(e)        => {
+                                log::debug!("Couldn't read metadata file: {}", e.to_string());
+                                return Err(VPluginError::ParametersError);
+                        }
+                };
+                let buffer = String::from(contents.as_str());
 
+                log::trace!("Reaching TOML and passing: \n\n{buffer}\n\n as a parameter.");
                 let data_raw: Data = match toml::from_str(&buffer) {
                         Ok(ok) => ok,
-                        Err(_) => abort()
+                        Err(e) => {
+                                log::error!(
+                                        target: "metadata",
+                                        "FAILED: Reading TOML data failed (Line: {:?}, Message: {})",
+                                        e.line_col(),
+                                        e.to_string()
+                                );
+                                return Err(VPluginError::ParametersError)
+                        }
                 };
 
                 plugin_metadata.filename = "metadata.toml".to_owned();
