@@ -1,9 +1,9 @@
 <div align="center">
         <img src="assets/logo.svg" width="244"></img>
         <h2>VPlugin: A plugin framework for Rust.</h2>
-        <img src="https://img.shields.io/crates/v/crate.svg&style=flat-square" alt="crates.io">
+        <img src="https://img.shields.io/crates/v/vplugin?style=flat-square">
         <img src="https://img.shields.io/docsrs/vplugin?label=Documentation&style=flat-square">
-        <img src="https://img.shields.io/github/license/AndroGR/VPlugin?style=flat-square">
+        <img src="https://img.shields.io/github/license/VPlugin/VPlugin?style=flat-square">
         <img src="https://github.com/VPlugin/VPlugin/actions/workflows/default.yml/badge.svg">
         <br>
         <a href="https://vplugin.github.io/">Website</a> |
