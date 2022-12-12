@@ -14,6 +14,8 @@
  * limitations under the License.
 */
 
+#![allow(dead_code)]
+
 extern crate libloading;
 extern crate log;
 
@@ -79,8 +81,10 @@ pub struct Plugin {
 }
 
 impl PluginMetadata {
+        /// Loads metadata from the plugin specified, or returns an error if
+        /// something went wrong.
         fn load(plugin: &Plugin) -> Result<Self, VPluginError> {
-                log::debug!("Loading metadata for plugin: {}", plugin.filename);
+                log::debug!(target: "PluginMetadata", "Loading metadata for plugin: {}", plugin.filename);
                 let mut plugin_metadata = Self {
                      description: None,
                      version    : String::new(),
@@ -91,6 +95,7 @@ impl PluginMetadata {
                 let _ = match File::open("metadata.toml") {
                         Ok(val) => val,
                         Err(e) => {
+                                log::debug!(target: "PluginMetadata", "Couldn't open metadata file (metadata.toml): {}", e.to_string());
                                 match e.kind() {
                                         PermissionDenied => return Err(VPluginError::PermissionDenied),
                                         Unsupported      => return Err(VPluginError::InternalError("Unsupported file".into())),
@@ -120,23 +125,26 @@ impl PluginMetadata {
 }
 
 impl Plugin {
-        /// ## The function to load a plugin from VPlugin.
         /// This is the most useful function for VPlugin: It will load the plugin into
         /// a struct and return it (Or simply fail to do so, in which case an `Err` value will be
-        /// returned instead as a [VPluginError](VPluginError)).
-        /// ## Possible Errors
+        /// returned instead as a [VPluginError](crate::error::VPluginError)).
+        /// ## Possible Errors / Safety
         /// As loading a plugin is a pretty unsafe operation (Although still handled within the
         /// function itself to save you some time), you are advised to carefully call this function
         /// and avoid simply `unwrap`ing the `Result` passed. This will also help to avoid panics
         /// due to poor error handling.
+        /// ## Examples
+        /// ```rust
+        /// use vplugin::Plugin;
+        /// 
+        /// let plugin = Plugin::load("/path/to/plugin.vpl").expect("Failed to load plugin");
+        /// plugin.terminate();
+        /// ```
         pub fn load(filename: &str) -> Result<Plugin, VPluginError> {
-                log::debug!("Attempting to load {} as a plugin.", filename);
+                log::debug!(target: "Plugin", "Attempting to load plugin: {}", filename);
                 let fname = std::path::Path::new(filename);
                 let file = match fs::File::open(fname) {
-                        Ok(val) => {
-                                log::debug!("Successfully loaded {} as a plugin.", filename);
-                                val
-                        }
+                        Ok(val) => val,
                         Err(e) => {
                                 log::error!("Couldn't load {}: {}.", filename, e.to_string());
                                 match e.kind() {
@@ -157,6 +165,8 @@ impl Plugin {
                  * directory and then uncompress the archive. 
                  * Otherwise we fill the current directory with the contents
                  * of the archive when we shouldn't.
+                 * FIXME: On other platforms than Linux, we need to use another temporary directory
+                 * which is most likely not named /tmp.
                  */
                 env::set_current_dir(Path::new("/tmp")).expect("Failed to switch to the temporary directory");
 
@@ -187,7 +197,8 @@ impl Plugin {
                 unsafe {
                         raw = match Library::new("./raw.so") {
                                 Ok (v) => v,
-                                Err(_) => {
+                                Err(e) => {
+                                        log::debug!("Failed to open ./raw.so: {}", e.to_string());
                                         return Err(VPluginError::InvalidPlugin)
                                 }
                         }
@@ -204,6 +215,8 @@ impl Plugin {
                 Ok(plugin)
         }
 
+        /// Returns a VHook (Generic function pointer) that can be used to exchange data between
+        /// your application and the plugin.
         pub(super) fn load_vhook(&self, fn_name: &str) -> Result<VHook, VPluginError> {
                 let hook: Symbol<VHook>;
                 unsafe {
@@ -223,6 +236,7 @@ impl Plugin {
                 Self::load_vhook(self, fn_name)
         }
 
+        /// Implemented as public in [PluginManager](crate::plugin_manager::PluginManager).
         pub(crate) fn get_custom_hook<P, T>(
                 &self,
                 fn_name: &str
@@ -244,6 +258,7 @@ impl Plugin {
         /// A function to load the plugin's metadata into
         /// the plugin. In order to access the plugin's metadata,
         /// use the [get_metadata](crate::plugin::Plugin::get_metadata) function.
+        /// See also: [PluginMetadata](crate::plugin::PluginMetadata)
         pub fn load_metadata(&mut self) -> Result<(), VPluginError> {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
@@ -270,7 +285,9 @@ impl Plugin {
         /// ## `Err` returned:
         /// If an `Err` value was returned, this means that
         /// the plugin was either not loaded, invalid, doesn't
-        /// have a destructor function.
+        /// have a destructor function. In that case, you can try
+        /// using [`Plugin::force_terminate`](crate::plugin::Plugin::force_terminate)
+        /// to force the plugin to be removed, risking safety and undefined behavior.
         pub fn terminate(&self) -> Result<(), VPluginError> {
                 if self.raw.is_none() {
                         return Err(VPluginError::InvalidPlugin);
@@ -291,7 +308,54 @@ impl Plugin {
                 Ok(())
         }
 
-        pub fn force_terminate(&mut self) {
+        /// ## Force Terminate A Plugin
+        /// This function is used as a last resort if a plugin refuses to unload itself. Since
+        /// it simply "pulls the plug" from the plugin, the plugin will fail to make any further calls
+        /// or use any loops. To deal with the plugin's lifetime, it also takes ownership of the plugin,
+        /// so at the end of this function, the plugin is guaranteed to be terminated and removed.
+        /// ## Safety
+        /// This function is using a variety of unsafe methods to achieve 100% success:
+        /// - It closes the shared library file without any cleanup,
+        /// - It uses `unwrap_unchecked`,
+        /// - And finally, it uses another function to close the shared library,
+        /// which may also use unsafe functions below the hood.
+        /// 
+        /// For these reasons, it has been explicitly marked as unsafe.
+        /// ## Examples
+        /// ```rust
+        /// use vplugin::{
+        ///     Plugin,
+        ///     PluginManager
+        /// };
+        ///
+        /// fn main() {
+        ///     let mut plugin_mgr = PluginManager::new()
+        ///     let mut plugin = Plugin::load("plugin.vpl").expect("Unable to load plugin");
+        ///     plugin.begin().expect("Unable to execute the plugin");
+        ///
+        ///     if plugin.terminate().is_err() {
+        ///             println!("Failed to terminate plugin, will force termination.");
+        ///             unsafe {
+        ///                  plugin.force_terminate();
+        ///             }
+        ///     }
+        /// }
+        /// ```
+        /// ## Panicking
+        /// This function has a small chance of panicking if 
+        pub unsafe fn force_terminate(self) {
+                if self.started != true || self.raw.is_none() {
+                        log::debug!(
+                                target: "Plugin::force_terminate",
+                                "Plugin '{}' seems to be invalid, not forcing termination.",
+                                self.metadata.unwrap().name
+                        );
+                        return;
+                }
+                self.raw
+                        .unwrap_unchecked() /* We already know it's `Some` due to the if above. */
+                        .close()
+                        .expect("Couldn't close the plugin's object file.");
         }
 
         pub extern fn is_function_available(&self, name: &str) -> bool {
