@@ -1,5 +1,5 @@
 <div align="right">
-        Last edited on Nov. 09 2022. <br>
+        Last edited on Dec. 12 2022. <br>
         This file specifies the acceptable format for VPlugin-compatible plugins (modules). <br>
         Version: v1.0.0
 </div>
@@ -26,7 +26,7 @@ An extracted (uncompressed) directory can have any sorts of formats (Even source
 name    = "ExamplePlugin"
 version = "1.4.5"
 ```
-- The `plugin.so` file:\
+- The `raw.so` file:\
         - This file is the actual object file that will be loaded as the plugin. The standards it should follow are specified in [Section 3](#3-shared-object-format).
 
 ## 2. Archiving Format
