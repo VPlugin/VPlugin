@@ -366,17 +366,8 @@ impl Plugin {
         ///     }
         /// }
         /// ```
-        /// ## Panicking
-        /// This function has a small chance of panicking if 
+        #[inline]
         pub unsafe fn force_terminate(self) {
-                if self.started != true || self.raw.is_none() {
-                        log::error!(
-                                target: "Plugin::force_terminate",
-                                "Plugin '{}' seems to be invalid, not forcing termination.",
-                                self.metadata.unwrap().name
-                        );
-                        return;
-                }
                 self.raw
                         .unwrap_unchecked() /* We already know it's `Some` due to the if above. */
                         .close()
