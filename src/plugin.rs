@@ -47,6 +47,7 @@ struct Metadata {
         description: Option<String>,
         version    : String,
         name       : String,
+        objfile    : String
 }
 /// A struct that represents metadata about
 /// a single plugin, like its version and name.
@@ -61,6 +62,7 @@ pub struct PluginMetadata {
         pub version    : String,
         pub name       : String,
         pub filename   : String,
+        pub objfile    : String
 }
 
 /// The plugin type. This is used to identify a single plugin
@@ -81,22 +83,18 @@ pub struct Plugin {
 }
 
 impl PluginMetadata {
-        /// Loads metadata from the plugin specified, or returns an error if
-        /// something went wrong.
         fn load(plugin: &Plugin) -> Result<Self, VPluginError> {
-                log::debug!(target: "PluginMetadata", "Loading metadata for plugin: {}", plugin.filename);
                 let mut plugin_metadata = Self {
                      description: None,
                      version    : String::new(),
                      name       : String::new(),
                      filename   : plugin.filename.clone(),
+                     objfile    : String::new(),
                 };
 
-                log::trace!("Attempting to open the plugin metadata's file.");
                 let f = match File::open("metadata.toml") {
                         Ok(val) => val,
                         Err(e) => {
-                                log::debug!(target: "PluginMetadata", "Couldn't open metadata file (metadata.toml): {}", e.to_string());
                                 match e.kind() {
                                         PermissionDenied => return Err(VPluginError::PermissionDenied),
                                         Unsupported      => return Err(VPluginError::InternalError("Unsupported file".into())),
@@ -113,22 +111,14 @@ impl PluginMetadata {
                 let contents = match std::io::read_to_string(f) {
                         Ok(contents) => contents,
                         Err(e)        => {
-                                log::debug!("Couldn't read metadata file: {}", e.to_string());
                                 return Err(VPluginError::ParametersError);
                         }
                 };
                 let buffer = String::from(contents.as_str());
 
-                log::trace!("Reaching TOML and passing: \n\n{buffer}\n\n as a parameter.");
                 let data_raw: Data = match toml::from_str(&buffer) {
                         Ok(ok) => ok,
-                        Err(e) => {
-                                log::error!(
-                                        target: "metadata",
-                                        "FAILED: Reading TOML data failed (Line: {:?}, Message: {})",
-                                        e.line_col(),
-                                        e.to_string()
-                                );
+                        Err(_) => {
                                 return Err(VPluginError::ParametersError)
                         }
                 };
@@ -158,12 +148,16 @@ impl Plugin {
         /// plugin.terminate();
         /// ```
         pub fn load(filename: &str) -> Result<Plugin, VPluginError> {
-                log::debug!(target: "Plugin", "Attempting to load plugin: {}", filename);
                 let fname = std::path::Path::new(filename);
                 let file = match fs::File::open(fname) {
                         Ok(val) => val,
                         Err(e) => {
-                                log::error!("Couldn't load {}: {}.", filename, e.to_string());
+                                log::error!(
+                                        "Couldn't load {}: {} (error {})",
+                                        filename,
+                                        e.to_string(),
+                                        e.raw_os_error().unwrap_or(0)
+                                );
                                 match e.kind() {
                                         PermissionDenied => return Err(VPluginError::PermissionDenied),
                                         Unsupported      => return Err(VPluginError::InternalError("Unsupported file".into())),
@@ -184,6 +178,7 @@ impl Plugin {
                  * of the archive when we shouldn't.
                  * FIXME: On other platforms than Linux, we need to use another temporary directory
                  * which is most likely not named /tmp.
+                 * TODO: Return to the original directory after finishing decompression.
                  */
                 env::set_current_dir(Path::new("/tmp")).expect("Failed to switch to the temporary directory");
 
@@ -215,7 +210,7 @@ impl Plugin {
                         raw = match Library::new("./raw.so") {
                                 Ok (v) => v,
                                 Err(e) => {
-                                        log::debug!("Failed to open ./raw.so: {}", e.to_string());
+                                        log::error!("Couldn't open shared object file: {}", e.to_string());
                                         return Err(VPluginError::InvalidPlugin)
                                 }
                         }
@@ -309,6 +304,12 @@ impl Plugin {
                 if self.raw.is_none() {
                         return Err(VPluginError::InvalidPlugin);
                 }
+
+                if !self.started || !self.is_metadata_loaded() {
+                        log::error!("Cannot terminate a plugin that wasn't started in the first place.");
+                        return Err(VPluginError::InvalidPlugin);
+                }
+
                 let destructor: Symbol<unsafe extern "C" fn() -> ()>;
                 unsafe {
                         destructor = match self.raw
@@ -317,7 +318,14 @@ impl Plugin {
                                 .get(b"vplugin_exit\0")
                         {
                             Ok (v) => v,
-                            Err(_) => return Err(VPluginError::InvalidPlugin),
+                            Err(_) => {
+                                log::warn!(
+                                        target: "Destructor",
+                                        "Plugin {} does not have a destructor. Force terminate if needed.",
+                                        self.get_metadata().as_ref().unwrap().name
+                                );
+                                return Err(VPluginError::InvalidPlugin)
+                            },
                         };
 
                         destructor();
@@ -362,7 +370,7 @@ impl Plugin {
         /// This function has a small chance of panicking if 
         pub unsafe fn force_terminate(self) {
                 if self.started != true || self.raw.is_none() {
-                        log::debug!(
+                        log::error!(
                                 target: "Plugin::force_terminate",
                                 "Plugin '{}' seems to be invalid, not forcing termination.",
                                 self.metadata.unwrap().name
@@ -375,8 +383,10 @@ impl Plugin {
                         .expect("Couldn't close the plugin's object file.");
         }
 
-        pub extern fn is_function_available(&self, name: &str) -> bool {
+        /// Returns whether the function specified is available on the plugin.
+        pub fn is_function_available(&self, name: &str) -> bool {
                 if self.raw.is_none() {
+                        log::warn!("Avoid using misinitialized plugins as properly loaded ones (Missing shared object file).");
                         return false;
                 }
                 unsafe {
