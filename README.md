@@ -6,7 +6,7 @@
         <img src="https://img.shields.io/github/license/VPlugin/VPlugin?style=flat-square">
         <img src="https://github.com/VPlugin/VPlugin/actions/workflows/default.yml/badge.svg">
         <br>
-        <a href="https://vplugin.github.io/">Website</a> |
+        <a href="javascript:void(0)">Website</a> |
         <a href="https://github.com/AndroGR/VPlugin/issues">Issues</a> |
         <a href="https://docs.rs/crate/vplugin">Documentation</a>
         <p style="padding-top: 12px;">
