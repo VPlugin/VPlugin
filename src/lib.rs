@@ -28,7 +28,7 @@
 //! # Loading plugins
 //! Before you load a plugin, you will have to instanciate a `PluginManager`:
 //! ```
-//! use libvplugin::PluginManager;
+//! use vplugin::PluginManager;
 //! let mut manager = PluginManager::new();
 //! manager.set_entry_point("plugin_init"); /* Entry point for your plugin */
 //!
