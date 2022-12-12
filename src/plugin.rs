@@ -305,7 +305,7 @@ impl Plugin {
                         return Err(VPluginError::InvalidPlugin);
                 }
 
-                if !self.started || !self.is_metadata_loaded() {
+                if !self.started {
                         log::error!("Cannot terminate a plugin that wasn't started in the first place.");
                         return Err(VPluginError::InvalidPlugin);
                 }
