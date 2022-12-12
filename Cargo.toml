@@ -20,5 +20,10 @@ log          = "0.4.17"  # Used as a way to print errors.
 
 [lib]
 doctest    = false
-crate-type = [ "lib", "cdylib" ]
+crate-type = [
+        "lib",
+        # For a C implementation of VPlugin,
+        # ignore this for now.
+        "cdylib"
+]
 
