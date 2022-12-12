@@ -113,7 +113,7 @@ impl PluginManager {
         /// 
         /// This function is used to execute the entry point of the plugin,
         /// effectively starting the plugin like a normal executable.
-        pub fn begin_plugin(&mut self, plugin: &Plugin) -> Result<(), VPluginError>{
+        pub fn begin_plugin(&mut self, plugin: &mut Plugin) -> Result<(), VPluginError>{
                 if !plugin.is_valid {
                         log::error!(
                                 "Attempted to start plugin '{}', which is not marked as valid.",
@@ -137,6 +137,7 @@ impl PluginManager {
                                 return Err(VPluginError::FailedToInitialize);
                         }
                 }
+                plugin.started = true;
                 Ok(())
         }
 
