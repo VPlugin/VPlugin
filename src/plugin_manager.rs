@@ -114,7 +114,13 @@ impl PluginManager {
         /// This function is used to execute the entry point of the plugin,
         /// effectively starting the plugin like a normal executable.
         pub fn begin_plugin(&mut self, plugin: &Plugin) -> Result<(), VPluginError>{
-                if !plugin.is_valid { return Err(VPluginError::InvalidPlugin); }
+                if !plugin.is_valid {
+                        log::error!(
+                                "Attempted to start plugin '{}', which is not marked as valid.",
+                                plugin.get_metadata().as_ref().unwrap().name
+                        );
+                        return Err(VPluginError::InvalidPlugin);
+                }
                 let plugin_entry: Symbol<unsafe extern "C" fn() -> u32>;
                 unsafe {
                         plugin_entry = match plugin.raw
@@ -154,6 +160,10 @@ impl PluginManager {
                 for plugin in self.plugin.into_iter() {
                         if plugin.terminate().is_err() {
                                 unsafe {
+                                        log::info!(
+                                                "Plugin {} couldn't be normally terminated, forcing termination.",
+                                                plugin.metadata.as_ref().unwrap().name
+                                        );
                                         plugin.force_terminate();
                                 }
                         }
