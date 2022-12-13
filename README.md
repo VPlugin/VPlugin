@@ -27,7 +27,6 @@ VPlugin officially supports only the latest **stable** version of the Rust langu
 - High performance thanks to Rust's blazingly fast implementation.
 - Straightforward and minimal: Won't get in your way.
 - Multi-threaded: Allows you to run everything on another thread. Excludes plugins, which may use code that isn't multi-thread compatible.
-- Secure: A plugin under VPlugin is always following some conventions to ensure the security of the host or the application.
 
 ## Supported Languages
 Generally, most compiled languages will be supported, as long as they can build as a shared object file (shared library). This means that while VPlugin itself is Rust-only for now, it's perfectly possible to write a plugin usable by VPlugin in C, C++ or even Vala. See [the Plugin Specification](./spec/PluginFormat.md) for more details. Key requirement here is a way to export your types to those languages, which requires giving off safety guarantees and a lot of expertise.
