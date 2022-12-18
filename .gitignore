@@ -4,6 +4,3 @@ target
 
 # Extension of VPlugin plugins.
 *.vpl
-
-# Testing utility for VPlugin. Ignoring for now.
-/echo-rs
