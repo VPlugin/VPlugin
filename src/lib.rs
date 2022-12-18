@@ -25,16 +25,11 @@
 //! [the VPlugin Guide](https://vplugin.github.io/getting-started.html). You can also
 //! read the documentation provided here to get to learn the API.
 //! 
-//! # Loading plugins
-//! Before you load a plugin, you will have to instanciate a `PluginManager`:
-//! ```
-//! use vplugin::PluginManager;
-//! let mut manager = PluginManager::new();
-//! manager.set_entry_point("plugin_init"); /* Entry point for your plugin */
-//!
-//! let mut plugin = manager.load_plugin("/path/to/plugin").expect("Couldn't load plugin.");
-//! plugin.load_metadata().expect("Invalid plugin metadata.");
-//!```
+//! # Error Logging
+//! VPlugin uses the `log` crate to log messages. However, as you've might read from the documentation,
+//! this requires you to set another logging library that will actually print the errors. It's recommended
+//! to use `env_logger` although anything will work.
+//! 
 //! # Supported platforms:
 //! VPlugin supports the following platforms:
 //! - Windows (Only missing `raw.so` replacement.)
@@ -52,6 +47,7 @@ extern crate toml;
 mod plugin;
 mod plugin_manager;
 mod error;
+pub mod tutorial;
 
 /// Reexports of VPlugin's types.
 pub use plugin_manager::*;
