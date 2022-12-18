@@ -25,7 +25,6 @@ use std::fs::{
         File
 };
 use std::path::Path;
-use std::process::abort;
 use serde_derive::Deserialize;
 use libloading::{
         Library,
@@ -111,6 +110,7 @@ impl PluginMetadata {
                 let contents = match std::io::read_to_string(f) {
                         Ok(contents) => contents,
                         Err(e)        => {
+                                log::error!("Error reading metadata string: {}.", e.to_string());
                                 return Err(VPluginError::ParametersError);
                         }
                 };
