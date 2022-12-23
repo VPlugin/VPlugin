@@ -111,12 +111,12 @@ impl PluginMetadata {
                         Err(e) => {
                                 match e.kind() {
                                         PermissionDenied => return Err(VPluginError::PermissionDenied),
-                                        Unsupported      => return Err(VPluginError::InternalError("Unsupported file".into())),
+                                        Unsupported      => return Err(VPluginError::InternalError { err: "Unsupported file".into() }),
                                         NotFound         => return Err(VPluginError::NoSuchFile),
                                         Interrupted      => return Err(VPluginError::InvalidPlugin),
                                         UnexpectedEof    => return Err(VPluginError::InvalidPlugin),
-                                        OutOfMemory      => return Err(VPluginError::InternalError("Host is out of memory".into())),
-                                        Other            => return Err(VPluginError::InternalError("Unknown error.".into())),
+                                        OutOfMemory      => return Err(VPluginError::InternalError { err: "Host is out of memory".into() }),
+                                        Other            => return Err(VPluginError::InternalError { err: "Unknown error.".into() }),
                                         _ => panic!()
                                 }
                         }
@@ -199,12 +199,12 @@ impl Plugin {
                                 );
                                 match e.kind() {
                                         PermissionDenied => return Err(VPluginError::PermissionDenied),
-                                        Unsupported      => return Err(VPluginError::InternalError("Unsupported file".into())),
+                                        Unsupported      => return Err(VPluginError::InternalError { err: "Unsupported file".into() }),
                                         NotFound         => return Err(VPluginError::NoSuchFile),
                                         Interrupted      => return Err(VPluginError::InvalidPlugin),
                                         UnexpectedEof    => return Err(VPluginError::InvalidPlugin),
-                                        OutOfMemory      => return Err(VPluginError::InternalError("Host is out of memory".into())),
-                                        Other            => return Err(VPluginError::InternalError("Unknown error.".into())),
+                                        OutOfMemory      => return Err(VPluginError::InternalError { err: "Host is out of memory".into() }),
+                                        Other            => return Err(VPluginError::InternalError { err: "Unknown error.".into() }),
                                         _ => panic!()
                                 }
                         }

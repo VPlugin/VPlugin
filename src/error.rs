@@ -14,6 +14,9 @@
  * limitations under the License.
 */
 
+extern crate thiserror;
+use thiserror::Error;
+
 /// ## **Generic error code enum**
 /// 
 /// This enum represents possible errors that can occur while using
@@ -24,26 +27,33 @@
 /// If a function from VPlugin returned an `Err` with this enum, then you are
 /// advised to see what the error is (There is a `#derive(Debug)` also used there).
 /// If an `InternalError` is returned, then take a look at the `String` parameter instead.
-#[derive(Debug)]
+#[derive(Error, Debug)]
 #[repr(C)]
 pub enum VPluginError {
         /// Invalid parameters passed to the function,
         /// only useful for FFI calls.
+        #[error("Passed invalid parameters")]
         ParametersError,
         /// The plugin given is not valid
         /// for this operation.
+        #[error("Invalid plugin requested")]
         InvalidPlugin,
         /// The file requested is not available.
+        #[error("File requested couldn't be accessed")]
         NoSuchFile,
         /// You do not have permission to access something
         /// on the host system.
+        #[error("Access denied on requested permissions")]
         PermissionDenied,
         /// The symbol requested is not present in the raw
         /// object file.
+        #[error("Symbol requested is not present in the plugin")]
         MissingSymbol,
         /// The plugin failed to initialize.
+        #[error("Plugin failed to initialize")]
         FailedToInitialize,
         /// Internal error: See the `String` parameter
         /// to determine what the error is.
-        InternalError(String),
+        #[error("Internal error: {err:?}")]
+        InternalError {err: String},
 }
