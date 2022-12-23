@@ -138,6 +138,30 @@ impl PluginMetadata {
                         }
                 };
 
+                if data_raw.metadata.name.is_empty()
+                || data_raw.metadata.name.contains(' ') {
+                        /*
+                         * Here we panic as without a name, it's impossible to identify the plugin
+                         * for future errors.
+                         */
+                        panic!(
+                                "
+                                Attempted to use a plugin that has an empty name in its metadata or contains an
+                                invalid character in the field.
+                                "
+                        )
+                }
+
+                if data_raw.metadata.version.is_empty()
+                || data_raw.metadata.version.contains(' ') {
+                        log::error!(
+                                "
+                                Detected either empty or invalid version string in metadata.toml (Plugin
+                                '{}'
+                                ", data_raw.metadata.name
+                        );
+                }
+
                 plugin_metadata.filename = "metadata.toml".to_owned();
                 plugin_metadata.version  = data_raw.metadata.version;
                 plugin_metadata.name     = data_raw.metadata.name;
