@@ -2,6 +2,7 @@
 name        = "vplugin"
 version     = "0.1.0"
 edition     = "2021"
+repository  = "https://github.com/VPlugin/VPlugin.git"
 description = "A Rust framework that allows projects to create and use a plugin system."
 license     = "Apache-2.0"
 authors     = [ "Aggelos Tselios <aggelostselios777@gmail.com" ]
@@ -16,14 +17,13 @@ libloading   = "0.7"     # Used to instanciate the module.
 cfg-if       = "1.0.0"   # Used because Rust's macros suck
 log          = "0.4.17"  # Used as a way to print errors.
 thiserror    = "1.0.38"  # For string explanations of VPluginError
+
 [features]
+
 
 [lib]
 doctest    = false
 crate-type = [
-        "lib",
-        # For a C implementation of VPlugin,
-        # ignore this for now.
-        "cdylib"
+        "rlib",
 ]
 
