@@ -14,28 +14,76 @@
  * limitations under the License.
 */
 
+
 //! # VPlugin
-//! VPlugin is a cross-platform Rust framework to develop and use plugins on any sort of project.
-//! It offers a suite of tools and libraries that make it easy to integrate with
-//! any sort of project. VPlugin aims to provide a high-level abstraction for applications
-//! that cannot afford to reinvent the whee;
+//! VPlugin is a cross-platform plugin framework for Rust. VPlugin takes care of your project's
+//! plugin part so you can focus on the actual application without having to worry about the
+//! details of your plugins.
 //! 
-//! # Using VPlugin
-//! VPlugin is a large project. In order to learn how to use it, you are advised to read
-//! [the VPlugin Guide](https://vplugin.github.io/getting-started.html). You can also
-//! read the documentation provided here to get to learn the API.
+//! # Example
+//! First, creating a skeleton app for the plugin:
+//! `main.rs`:
 //! 
-//! # Error Logging
-//! VPlugin uses the `log` crate to log messages. However, as you've might read from the documentation,
-//! this requires you to set another logging library that will actually print the errors. It's recommended
-//! to use `env_logger` although anything will work.
+//! ```rust
+//! extern crate vplugin;
+//! use vplugin::PluginManager;
 //! 
-//! # Supported platforms:
-//! VPlugin supports the following platforms:
-//! - Windows (Only missing `raw.so` replacement.)
-//! - MacOS X (Only missing `raw.so` replacement.)
-//! - GNU/Linux (Complete)
-//! - FreeBSD (Complete)
+//!
+//! const FILENAME: &str = "plugin/example.vpl";
+//! 
+//! fn main() {
+//!     let manager    = PluginManager::new();
+//!     let mut plugin = manager.load_plugin(FILENAME).expect("Couldn't load plugin");
+//! 
+//!     manager.set_entry_point("app_entry");
+//!     plugin.load_metadata().expect("Couldn't load metadata");
+//! 
+//!     manager.begin_plugin().expect("Couldn't begin plugin");
+//!     if plugin.terminate().is_err() {
+//!             unsafe { plugin.force_terminate(); }
+//!             plugin_manager.shutdown();
+//!     };
+//! }
+//! ```
+//! Then, create a new plugin with [vplugin-init](https://github.com/VPlugin/vplugin-init/):
+//! ```text
+//! $ vplugin-init \
+//!     --directory plugin \
+//!     --name "example-plugin" \
+//!     --version "0.1.0" \
+//!     --language rust \
+//!     --objfile plugin.obj
+//! 
+//! $ cd plugin/
+//! ```
+//! Afterwards, create an entry point and a destructor for the plugin:
+//! `plugin.rs`:
+//! ```rust
+//! /* Entry point */
+//! #[no_mangle]
+//! fn app_entry()-> i32 {
+//!     println!("Hello plugin!");
+//!     0
+//! }
+//! 
+//! /* Destructor */
+//! #[no_mangle]
+//! fn vplugin_exit() {
+//!     println!("Goodbye plugin!");
+//! }
+//! ```
+//! Then package the plugin as a whole with [vplugin-package](https://github.com/VPlugin/vplugin-package/):
+//! ```text
+//! $ vplugin-package -o example.vpl
+//! $ cd .. # To get back to the application
+//! ```
+//! Now, running the application should give you two messages to stdout:
+//! ```text
+//! $ cargo r --release
+//! 
+//! Hello plugin!
+//! Goodbye plugin!
+//! ```
 
 /* I am still working on the C/C++ part. */
 #![allow(improper_ctypes_definitions)]
