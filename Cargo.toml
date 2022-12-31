@@ -1,3 +1,8 @@
+[workspace]
+members = [
+        "gl-example/",
+]
+
 [package]
 name        = "vplugin"
 version     = "0.1.0"
@@ -9,8 +14,8 @@ authors     = [ "Aggelos Tselios <aggelostselios777@gmail.com" ]
 keywords    = [ "plugin", "framework", "ffi", "rust" ]
 
 [dependencies]
-serde        = "1.0.147" # Needed for serialization / deserialization
-serde_derive = "1.0.147" # Needed for TOML parsing.
+serde        = "1.0.152" # Needed for serialization / deserialization
+serde_derive = "1.0.152" # Needed for TOML parsing.
 zip          = "0.6.3"   # Needed for decompressing plugins.
 toml         = "0.5.0"   # Config file language for plugins.
 libloading   = "0.7"     # Used to instanciate the module.
