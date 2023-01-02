@@ -4,3 +4,5 @@ target
 
 # Extension of VPlugin plugins.
 *.vpl
+*.obj
+*.so
