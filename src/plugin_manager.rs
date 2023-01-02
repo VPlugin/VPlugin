@@ -87,7 +87,8 @@ impl PluginManager {
         /// You probably want to set this to something unique to your application,
         /// like `appname_init`.
         pub fn set_entry_point(&mut self, entry_point: &str) {
-                self.entry = String::from(entry_point)
+                let entry_point_with_null = &format!("{}\0", entry_point);
+                self.entry = String::from(entry_point_with_null)
         }
 
         /// Returns a hook from the plugin specified.
@@ -121,7 +122,7 @@ impl PluginManager {
                         );
                         return Err(VPluginError::InvalidPlugin);
                 }
-                let plugin_entry: Symbol<unsafe extern "C" fn() -> u32>;
+                let plugin_entry: Symbol<unsafe extern "C" fn() -> i32>;
                 unsafe {
                         plugin_entry = match plugin.raw
                                         .as_ref()
@@ -129,11 +130,18 @@ impl PluginManager {
                                         .get(self.entry.as_bytes())
                                         {
                                                 Ok(fnc) => fnc,
-                                                Err(_)  => return Err(VPluginError::FailedToInitialize)
+                                                Err(e)  => {
+                                                        log::error!(
+                                                                "Couldn't initialize plugin: {}",
+                                                                e.to_string()
+                                                        );
+                                                        return Err(VPluginError::FailedToInitialize)
+                                                }
                                         };
 
-                        let result = plugin_entry();
-                        if result != 0 {
+                        let ___result = plugin_entry();
+                        if ___result != 0 {
+                                log::error!("Couldn't start plugin: Entry point '{}' did not return success", self.entry);
                                 return Err(VPluginError::FailedToInitialize);
                         }
                 }
