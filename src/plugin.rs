@@ -244,23 +244,12 @@ impl Plugin {
                         }
                 }
 
-                let raw;
-                unsafe {
-                        raw = match Library::new("./raw.so") {
-                                Ok (v) => v,
-                                Err(e) => {
-                                        log::error!("Couldn't open shared object file: {}", e.to_string());
-                                        return Err(VPluginError::InvalidPlugin)
-                                }
-                        }
-
-                }
                 let plugin = Self {
                         metadata: None,
                         filename: String::from(filename),
                         is_valid: false,
                         started : false,
-                        raw     : Some(raw),
+                        raw     : None,
                         archive,
                 };
                 Ok(plugin)
@@ -313,11 +302,15 @@ impl Plugin {
         pub fn load_metadata(&mut self) -> Result<(), VPluginError> {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
+                                self.raw      = unsafe {
+                                        Some(Library::new(&v.objfile).unwrap())
+                                };
                                 self.is_valid = true;
                                 self.metadata = Some(v);
                                 Ok(())
                         },
                         Err(e) => {
+                                log::error!("Couldn't load metadata ({}): {}", self.filename, e.to_string());
                                 Err(e)
                         }
                 }
