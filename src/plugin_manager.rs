@@ -58,7 +58,7 @@ impl PluginManager {
         pub fn new() -> Self {
                 Self {
                         plugin : Vec::new(),
-                        entry  : String::from("vplugin_init\0"),
+                        entry  : String::from("vplugin_init"),
                         running: false, /* No plugins running */
                         errcode: 0
                 }
