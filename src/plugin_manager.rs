@@ -122,6 +122,15 @@ impl PluginManager {
                         );
                         return Err(VPluginError::InvalidPlugin);
                 }
+
+                if plugin.started {
+                        log::error!(
+                                "Plugin '{}' has already been initialized.",
+                                plugin.get_metadata().as_ref().unwrap().name
+                        );
+                        return Err(VPluginError::FailedToInitialize);
+                }
+
                 let plugin_entry: Symbol<unsafe extern "C" fn() -> i32>;
                 unsafe {
                         plugin_entry = match plugin.raw
