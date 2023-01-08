@@ -1,7 +1,7 @@
 <div align="right">
-        Last edited on Dec. 23 2022. <br>
+        Last edited on Jan. 8 2023. <br>
         This file specifies the acceptable format for VPlugin-compatible plugins (modules). <br>
-        Version: v1.0.1
+        Version: v1.0.2
 </div>
 
 # VPlugin -- Plugin Format Specification
@@ -49,9 +49,14 @@ Plugins that need to be compatible with VPlugin shall be created as a non-encryp
 VPlugin provides tools both to extract and compress VPlugin packages.
 
 ## 3. Shared Object Format
-The raw shared object file that will be used to interact between the plugin and the actual application / library should NOT have a `main` function, but rather follow the application's guidelines for the entry point. As a fallback, a function named `vplugin_init` can be created. However compatibility with the application the plugin is targeting is not guaranteed.
+The raw shared object file that will be used to interact between the plugin and the actual application / library should NOT have a `main` function, but rather follow the application's guidelines for the entry point. As a fallback, a function named `vplugin_init` can be created (See [Initialization and destruction routines](#5-initialization-and-destruction-routines)). However compatibility with the application the plugin is targeting is not guaranteed.
 
 It should also be built with the ability to dynamically load it as a shared library, and its symbols should not be mangled (At least the entry point and the destructor). Last, for plugins that are written in the Rust programming language, a C linkage / ABI must be specified. This is often done by specifying `extern "C"`, although Cargo projects may as well specify `cdylib` as the crate type.
 
 ## 4. File Extensions
 Plugins compatible with VPlugin are expected to use the `.vpl` file extension, to be forward compatible with future versions of VPlugin (Which may allow to specify filenames without extensions). This file extension is to be used on the final archive, so a compiled plugin should be named `plugin.vpl`.
+
+## 5. Initialization and destruction routines
+Every plugin is required to have an entry point and an optional destructor:
+- The entry point depends on the application the plugin is targeting. It defaults to `vplugin_init` and while not necessary, the developer of the application can change it to any name they consider appropriate.
+- The destructor will **ALWAYS** be called `vplugin_exit` and only exists so the application can free in non-managed languages (Such as C++) remaining allocations. Even in managed ones like Rust, it would be a good idea to use the destructor since they may not be able to detect the termination and leave resources behind.
