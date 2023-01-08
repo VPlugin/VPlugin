@@ -303,7 +303,7 @@ impl Plugin {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
                                 self.raw      = unsafe {
-                                        Some(Library::new(&v.objfile).unwrap())
+                                        Some(Library::new(&format!("/tmp/{}", v.objfile)).unwrap())
                                 };
                                 self.is_valid = true;
                                 self.metadata = Some(v);
