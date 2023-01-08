@@ -176,15 +176,7 @@ impl PluginManager {
         /// `drop` on the plugin manager though automatically.
         pub extern fn shutdown(self) {
                 for plugin in self.plugin.into_iter() {
-                        if plugin.terminate().is_err() {
-                                unsafe {
-                                        log::info!(
-                                                "Plugin {} couldn't be normally terminated, forcing termination.",
-                                                plugin.metadata.as_ref().unwrap().name
-                                        );
-                                        plugin.force_terminate();
-                                }
-                        }
+                        plugin.terminate().unwrap_or_else(|_| log::warn!("Error occured while unloading plugin."));
                 }
 
                 drop(self.entry);
