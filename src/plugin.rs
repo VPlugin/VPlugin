@@ -19,7 +19,7 @@
 extern crate libloading;
 extern crate log;
 
-use std::env;
+use std::env::{self};
 use std::fs::{
         self,
         File
@@ -165,6 +165,7 @@ impl PluginMetadata {
                 plugin_metadata.filename = "metadata.toml".to_owned();
                 plugin_metadata.version  = data_raw.metadata.version;
                 plugin_metadata.name     = data_raw.metadata.name;
+                plugin_metadata.objfile  = data_raw.metadata.objfile;
 
                 Ok(plugin_metadata)
         }
@@ -210,7 +211,7 @@ impl Plugin {
                         }
                 };
 
-                /* 
+                                /* 
                  * First we need to change to the temporary
                  * directory and then uncompress the archive. 
                  * Otherwise we fill the current directory with the contents
@@ -302,8 +303,8 @@ impl Plugin {
         pub fn load_metadata(&mut self) -> Result<(), VPluginError> {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
-                                self.raw      = unsafe {
-                                        Some(Library::new(&format!("/tmp/{}", v.objfile)).unwrap())
+                                self.raw       = unsafe {
+                                        Some(Library::new(format!("/tmp/{}", v.objfile)).unwrap())
                                 };
                                 self.is_valid = true;
                                 self.metadata = Some(v);
