@@ -323,51 +323,8 @@ impl Plugin {
                 &self.metadata
         }
 
-        /// Unloads the plugin, if loaded and started,
-        /// calling its destructor in the process and
-        /// freeing up resources.
-        /// 
-        /// ## `Err` returned:
-        /// If an `Err` value was returned, this means that
-        /// the plugin was either not loaded, invalid, doesn't
-        /// have a destructor function. In that case, you can try
-        /// using [`Plugin::force_terminate`](crate::plugin::Plugin::force_terminate)
-        /// to force the plugin to be removed, risking safety and undefined behavior.
-        pub fn terminate(&self) -> Result<(), VPluginError> {
-                if self.raw.is_none() {
-                        return Err(VPluginError::InvalidPlugin);
-                }
-
-                if !self.started {
-                        log::error!("Cannot terminate a plugin that wasn't started in the first place.");
-                        return Err(VPluginError::InvalidPlugin);
-                }
-
-                let destructor: Symbol<unsafe extern "C" fn() -> ()>;
-                unsafe {
-                        destructor = match self.raw
-                                .as_ref()
-                                .unwrap_unchecked()
-                                .get(b"vplugin_exit\0")
-                        {
-                            Ok (v) => v,
-                            Err(_) => {
-                                log::warn!(
-                                        target: "Destructor",
-                                        "Plugin {} does not have a destructor. Force terminate if needed.",
-                                        self.get_metadata().as_ref().unwrap().name
-                                );
-                                return Err(VPluginError::InvalidPlugin)
-                            },
-                        };
-
-                        destructor();
-                }
-                Ok(())
-        }
-
         /// ## Force Terminate A Plugin
-        /// This function is used as a last resort if a plugin refuses to unload itself. Since
+        /// This function is used to unload a plugin. The alternative that won't call a destructor is Plugin::force_terminate. Since
         /// it simply "pulls the plug" from the plugin, the plugin will fail to make any further calls
         /// or use any loops. To deal with the plugin's lifetime, it also takes ownership of the plugin,
         /// so at the end of this function, the plugin is guaranteed to be terminated and removed.
@@ -399,10 +356,45 @@ impl Plugin {
         ///     }
         /// }
         /// ```
+        pub fn terminate(self) -> Result<(), VPluginError> {
+                if self.raw.is_none() {
+                        return Err(VPluginError::InvalidPlugin);
+                }
+
+                if !self.started {
+                        log::error!("Cannot terminate a plugin that wasn't started in the first place.");
+                        return Err(VPluginError::InvalidPlugin);
+                }
+                
+                let destructor: Symbol<unsafe extern "C" fn() -> ()>;
+                unsafe {
+                        destructor = match self.raw
+                                .as_ref()
+                                .unwrap_unchecked()
+                                .get(b"vplugin_exit\0")
+                        {
+                            Ok (v) => v,
+                            Err(_) => {
+                                log::warn!(
+                                        "Plugin {} does not have a destructor. Force terminate if needed.",
+                                        self.get_metadata().as_ref().unwrap().name
+                                );
+                                return Err(VPluginError::InvalidPlugin)
+                            },
+                        };
+                        destructor();
+                }
+                
+                self.raw.unwrap().close().expect("Could not close plugin file");
+                Ok(())
+        }
+
         #[inline]
+        /// Force unloads the plugin. Useful if the destructor is not needed and you
+        /// just want the plugin to end.
         pub unsafe fn force_terminate(self) {
                 self.raw
-                        .unwrap_unchecked() /* We already know it's `Some` due to the if above. */
+                        .unwrap_unchecked()
                         .close()
                         .expect("Couldn't close the plugin's object file.");
         }
