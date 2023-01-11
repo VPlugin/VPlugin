@@ -188,6 +188,7 @@ impl Plugin {
         /// plugin.terminate();
         /// ```
         pub fn load(filename: &str) -> Result<Plugin, VPluginError> {
+                log::trace!("Loading plugin: {}.", filename);
                 let fname = std::path::Path::new(filename);
                 let file = match fs::File::open(fname) {
                         Ok(val) => val,
@@ -211,7 +212,7 @@ impl Plugin {
                         }
                 };
 
-                                /* 
+                /*
                  * First we need to change to the temporary
                  * directory and then uncompress the archive. 
                  * Otherwise we fill the current directory with the contents
@@ -223,6 +224,7 @@ impl Plugin {
                 env::set_current_dir(Path::new("/tmp")).expect("Failed to switch to the temporary directory");
 
                 /* Uncompressing the archive. */
+                log::trace!("Uncompressing plugin {}", filename);
                 let mut archive = zip::ZipArchive::new(file).unwrap();
                 for i in 0..archive.len() {
                         let mut file = archive.by_index(i).unwrap();
@@ -253,17 +255,23 @@ impl Plugin {
                         raw     : None,
                         archive,
                 };
+
+                log::trace!("Plugin successfully loaded into memory. Cannot print information though, call Plugin::load_metadata().");
                 Ok(plugin)
         }
 
         /// Returns a VHook (Generic function pointer) that can be used to exchange data between
         /// your application and the plugin.
         pub(super) fn load_vhook(&self, fn_name: &str) -> Result<VHook, VPluginError> {
+                if !self.started || !self.is_valid || self.raw.is_none() {
+                        log::error!("Attempted to load plugin function that isn't started or isn't valid");
+                        return Err(VPluginError::InvalidPlugin);
+                }
                 let hook: Symbol<VHook>;
                 unsafe {
                         hook = match self.raw
                                 .as_ref()
-                                .unwrap_unchecked() /* No problem, already pretty unsafe */
+                                .unwrap_unchecked()
                                 .get(format!("{}\0", fn_name).as_bytes())
                         {
                             Ok (v) => v,
@@ -282,6 +290,10 @@ impl Plugin {
                 &self,
                 fn_name: &str
         ) -> Result<unsafe extern fn(P) -> T, VPluginError> {
+                if !self.started || !self.is_valid || self.raw.is_none() {
+                        log::error!("Cannot load custom hook from non-started or invalid plugin.");
+                        return Err(VPluginError::InvalidPlugin);
+                }
                 let hook: Symbol<unsafe extern fn(P) -> T>;
                 unsafe {
                         hook = match self.raw
@@ -306,8 +318,20 @@ impl Plugin {
                                 self.raw       = unsafe {
                                         Some(Library::new(format!("/tmp/{}", v.objfile)).unwrap())
                                 };
+
+                                log::trace!("Loaded plugin metadata for {}. Printing information...", self.filename);
+                                log::trace!("Plugin ID (Name):\t{}", v.name);
+                                log::trace!("Plugin Version:\t{}", v.version);
+                                log::trace!("Plugin Implementation File:\t{}", v.objfile);
+                                if v.description.is_some() {
+                                        log::trace!("Plugin Description:\t{}", v.description.as_ref().unwrap());
+                                } else {
+                                        log::info!("Plugin {} does not have a description", v.name);
+                                }
+
                                 self.is_valid = true;
                                 self.metadata = Some(v);
+
                                 Ok(())
                         },
                         Err(e) => {
