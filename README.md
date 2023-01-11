@@ -23,6 +23,12 @@ Generally, VPlugin aims to become a low-level block in your application, where y
 ## MSRV
 VPlugin officially supports only the latest **stable** version of the Rust language. You may be able to get it to compile on a few older versions, but do not be confused if your computer blows up or you get a ton of error messages on the console.
 
+## Repo Contents
+This repository contains the library that implements VPlugin, as well as the Plugin Format Specification and some other related stuff. For other related projects, see the [GitHub Organization](https://github.com/VPlugin).
+
+## Examples
+An example application is available [here](https://github.com/VPlugin/vplugin-example). For more information about it, see the README file.
+
 ## VPlugin's Features:
 - High performance thanks to Rust's blazingly fast implementation.
 - Straightforward and minimal: Won't get in your way.
