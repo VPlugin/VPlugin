@@ -333,7 +333,7 @@ impl Plugin {
         /// have a destructor function. In that case, you can try
         /// using [`Plugin::force_terminate`](crate::plugin::Plugin::force_terminate)
         /// to force the plugin to be removed, risking safety and undefined behavior.
-        pub fn terminate(&self) -> Result<(), VPluginError> {
+        pub fn terminate(&mut self) -> Result<(), VPluginError> {
                 if self.raw.is_none() {
                         return Err(VPluginError::InvalidPlugin);
                 }
@@ -362,6 +362,14 @@ impl Plugin {
                         };
 
                         destructor();
+                }
+
+                self.started  = false;
+                if cfg!(feature = "non_reusable_plugins") {
+                        self.is_valid = false;
+                        self.raw      = None;
+                        self.filename = String::new();
+                        self.metadata = None;
                 }
                 Ok(())
         }
