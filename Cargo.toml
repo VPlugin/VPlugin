@@ -19,7 +19,8 @@ log          = "0.4.17"  # Used as a way to print errors.
 thiserror    = "1.0.38"  # For string explanations of VPluginError
 
 [features]
-
+default              = [ ]
+non_reusable_plugins = [ ]
 
 [lib]
 doctest    = false
