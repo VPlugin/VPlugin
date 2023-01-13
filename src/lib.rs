@@ -14,6 +14,8 @@
  * limitations under the License.
 */
 
+#![warn(clippy::all)]
+#![allow(clippy::needless_doctest_main)]
 
 //! # VPlugin
 //! VPlugin is a cross-platform plugin framework for Rust. VPlugin takes care of your project's
