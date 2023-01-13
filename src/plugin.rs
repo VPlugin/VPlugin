@@ -36,6 +36,19 @@ use crate::VHook;
 use crate::error::VPluginError;
 use std::io::ErrorKind::*;
 
+/* Personally I believe it looks much better like this */
+type LaterInitialized<T> = Option<T>;
+macro_rules! initialize_later {
+    () => {
+        None
+    };
+}
+macro_rules! init_now {
+    ($a:expr) => {
+        Some($a)
+    };
+}
+
 /// This is purely for deserialization.
 #[derive(Deserialize)]
 struct Data {
@@ -73,11 +86,11 @@ pub struct PluginMetadata {
 pub struct Plugin {
         // Metadata about the plugin, will be None if the plugin
         // has not loaded its metadata yet.
-        pub metadata       : Option<PluginMetadata>,
+        pub metadata       : LaterInitialized<PluginMetadata>,
         pub(crate) filename: String,
         pub(crate) is_valid: bool,
         pub(crate) started : bool,
-        pub(crate) raw     : Option    <Library>,
+        pub(crate) raw     : LaterInitialized<Library>,
         pub(crate) archive : ZipArchive<File>,
 
 }
@@ -248,11 +261,11 @@ impl Plugin {
                 }
 
                 let plugin = Self {
-                        metadata: None,
+                        metadata: initialize_later!(),
+                        raw     : initialize_later!(),
                         filename: String::from(filename),
                         is_valid: false,
                         started : false,
-                        raw     : None,
                         archive,
                 };
 
@@ -316,7 +329,7 @@ impl Plugin {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
                                 self.raw       = unsafe {
-                                        Some(Library::new(format!("/tmp/{}", v.objfile)).unwrap())
+                                        init_now!(Library::new(format!("/tmp/{}", v.objfile)).unwrap())
                                 };
 
                                 log::trace!("Loaded plugin metadata for {}. Printing information...", self.filename);
@@ -330,7 +343,7 @@ impl Plugin {
                                 }
 
                                 self.is_valid = true;
-                                self.metadata = Some(v);
+                                self.metadata = init_now!(v);
 
                                 Ok(())
                         },
