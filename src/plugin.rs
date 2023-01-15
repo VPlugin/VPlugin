@@ -411,47 +411,6 @@ impl Plugin {
                 Ok(())
         }
 
-        /// ## Force Terminate A Plugin
-        /// This function is used as a last resort if a plugin refuses to unload itself. Since
-        /// it simply "pulls the plug" from the plugin, the plugin will fail to make any further calls
-        /// or use any loops. To deal with the plugin's lifetime, it also takes ownership of the plugin,
-        /// so at the end of this function, the plugin is guaranteed to be terminated and removed.
-        /// ## Safety
-        /// This function is using a variety of unsafe methods to achieve 100% success:
-        /// - It closes the shared library file without any cleanup,
-        /// - It uses `unwrap_unchecked`,
-        /// - And finally, it uses another function to close the shared library,
-        /// which may also use unsafe functions below the hood.
-        /// 
-        /// For these reasons, it has been explicitly marked as unsafe.
-        /// ## Examples
-        /// ```rust
-        /// use vplugin::{
-        ///     Plugin,
-        ///     PluginManager
-        /// };
-        ///
-        /// fn main() {
-        ///     let mut plugin_mgr = PluginManager::new()
-        ///     let mut plugin = Plugin::load("plugin.vpl").expect("Unable to load plugin");
-        ///     plugin.begin().expect("Unable to execute the plugin");
-        ///
-        ///     if plugin.terminate().is_err() {
-        ///             println!("Failed to terminate plugin, will force termination.");
-        ///             unsafe {
-        ///                  plugin.force_terminate();
-        ///             }
-        ///     }
-        /// }
-        /// ```
-        #[inline]
-        pub unsafe fn force_terminate(self) {
-                self.raw
-                        .unwrap_unchecked() /* We already know it's `Some` due to the if above. */
-                        .close()
-                        .expect("Couldn't close the plugin's object file.");
-        }
-
         /// Returns whether the function specified is available on the plugin.
         pub fn is_function_available(&self, name: &str) -> bool {
                 if self.raw.is_none() {
@@ -469,5 +428,30 @@ impl Plugin {
         #[inline(always)]
         pub fn is_metadata_loaded(&self) -> bool {
                 self.metadata.is_some()
+        }
+}
+
+impl Drop for Plugin {
+        fn drop(&mut self) {
+                let real_path = format!(
+                        "{}/vplugin/{}",
+                        env::temp_dir().display(),
+                        self.metadata.as_ref().unwrap().name
+                );
+                let plugin_dir = Path::new(
+                        &real_path
+                );
+                
+                match std::fs::remove_dir_all(&plugin_dir) {
+                        Err(e) => {
+                                log::warn!(
+                                        "Couldn't remove directory '{}' corresponding to plugin '{}': {}",
+                                        plugin_dir.display(),
+                                        self.metadata.as_ref().unwrap().name,
+                                        e.to_string()
+                                )
+                        },
+                        Ok(_) => ()
+                }
         }
 }
