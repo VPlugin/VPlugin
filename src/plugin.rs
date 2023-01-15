@@ -20,6 +20,7 @@ extern crate libloading;
 extern crate log;
 
 use std::env::{self};
+use std::ffi::OsStr;
 use std::fs::{
         self,
         File
@@ -110,6 +111,7 @@ impl PluginMetadata {
                 Ok(data)
 
         }
+        
         fn load(plugin: &Plugin) -> Result<Self, VPluginError> {
                 let mut plugin_metadata = Self {
                      description: None,
@@ -185,30 +187,16 @@ impl PluginMetadata {
 }
 
 impl Plugin {
-        /// This is the most useful function for VPlugin: It will load the plugin into
-        /// a struct and return it (Or simply fail to do so, in which case an `Err` value will be
-        /// returned instead as a [VPluginError](crate::error::VPluginError)).
-        /// ## Possible Errors / Safety
-        /// As loading a plugin is a pretty unsafe operation (Although still handled within the
-        /// function itself to save you some time), you are advised to carefully call this function
-        /// and avoid simply `unwrap`ing the `Result` passed. This will also help to avoid panics
-        /// due to poor error handling.
-        /// ## Examples
-        /// ```rust
-        /// use vplugin::Plugin;
-        /// 
-        /// let plugin = Plugin::load("/path/to/plugin.vpl").expect("Failed to load plugin");
-        /// plugin.terminate();
-        /// ```
-        pub fn load(filename: &str) -> Result<Plugin, VPluginError> {
-                log::trace!("Loading plugin: {}.", filename);
-                let fname = std::path::Path::new(filename);
+        fn load_archive<S: Copy + Into<String> + AsRef<OsStr>>(filename: S) -> Result<Self, VPluginError> {
+                log::trace!("Loading plugin: {}.", &filename.into());
+                let tmp = filename.into();
+                let fname = std::path::Path::new(&tmp);
                 let file = match fs::File::open(fname) {
                         Ok(val) => val,
                         Err(e) => {
                                 log::error!(
                                         "Couldn't load {}: {} (error {})",
-                                        filename,
+                                        filename.into(),
                                         e.to_string(),
                                         e.raw_os_error().unwrap_or(0)
                                 );
@@ -224,20 +212,10 @@ impl Plugin {
                                 }
                         }
                 };
-
-                /*
-                 * First we need to change to the temporary
-                 * directory and then uncompress the archive. 
-                 * Otherwise we fill the current directory with the contents
-                 * of the archive when we shouldn't.
-                 * FIXME: On other platforms than Linux, we need to use another temporary directory
-                 * which is most likely not named /tmp.
-                 * TODO: Return to the original directory after finishing decompression.
-                 */
                 env::set_current_dir(Path::new("/tmp")).expect("Failed to switch to the temporary directory");
 
                 /* Uncompressing the archive. */
-                log::trace!("Uncompressing plugin {}", filename);
+                log::trace!("Uncompressing plugin {}", filename.into());
                 let mut archive = zip::ZipArchive::new(file).unwrap();
                 for i in 0..archive.len() {
                         let mut file = archive.by_index(i).unwrap();
@@ -263,13 +241,34 @@ impl Plugin {
                 let plugin = Self {
                         metadata: initialize_later!(),
                         raw     : initialize_later!(),
-                        filename: String::from(filename),
+                        filename: filename.into(),
                         is_valid: false,
                         started : false,
                         archive,
                 };
-
-                log::trace!("Plugin successfully loaded into memory. Cannot print information though, call Plugin::load_metadata().");
+                Ok(plugin)
+        }
+        /// Loads a plugin into memory and returns it.
+        /// After 0.2.0, metadata is also loaded in this call so avoid calling it
+        /// again (For your convenience, it has been marked as deprecated).
+        pub fn load<S: Copy + Into<String> + AsRef<OsStr>>(filename: S) -> Result<Plugin, VPluginError> {
+                let mut plugin = match Self::load_archive(filename) {
+                        Err(e) => {
+                                log::error!("Couldn't load archive, stopping here.");
+                                return Err(e);
+                        }
+                        Ok (p) => p
+                };
+                
+                /* Until I rewrite the function a little, we shouldn't care about the warning. */
+                #[allow(deprecated)]
+                match plugin.load_metadata() {
+                        Err(e) => {
+                                log::error!("Couldn't load metadata, stopping here.");
+                                return Err(e);
+                        }
+                        Ok(_) => ()
+                }
                 Ok(plugin)
         }
 
@@ -325,6 +324,7 @@ impl Plugin {
         /// the plugin. In order to access the plugin's metadata,
         /// use the [get_metadata](crate::plugin::Plugin::get_metadata) function.
         /// See also: [PluginMetadata](crate::plugin::PluginMetadata)
+        #[deprecated = "The plugin's metadata will be automatically loaded along with the plugin itself."]
         pub fn load_metadata(&mut self) -> Result<(), VPluginError> {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
