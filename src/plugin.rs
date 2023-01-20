@@ -35,7 +35,7 @@ use libloading::{
 use zip::ZipArchive;
 use crate::VHook;
 use crate::error::VPluginError;
-use std::io::ErrorKind::*;
+use std::io::ErrorKind::{*, self};
 
 /* Personally I believe it looks much better like this */
 type LaterInitialized<T> = Option<T>;
@@ -212,7 +212,14 @@ impl Plugin {
                                 }
                         }
                 };
-                env::set_current_dir(Path::new("/tmp")).expect("Failed to switch to the temporary directory");
+                
+                match std::fs::create_dir(env::temp_dir().join("vplugin")) {
+                        Err(e) => match e.kind() {
+                                ErrorKind::AlreadyExists => (),
+                                _ => log::info!("Couldn't create VPlugin directory: {}", e.to_string()),
+                        }
+                        Ok(_) => env::set_current_dir(env::temp_dir().join("vplugin")).unwrap()
+                }
 
                 /* Uncompressing the archive. */
                 log::trace!("Uncompressing plugin {}", filename.into());
@@ -246,6 +253,7 @@ impl Plugin {
                         started : false,
                         archive,
                 };
+
                 Ok(plugin)
         }
         /// Loads a plugin into memory and returns it.
@@ -267,7 +275,13 @@ impl Plugin {
                                 log::error!("Couldn't load metadata, stopping here.");
                                 return Err(e);
                         }
-                        Ok(_) => ()
+                        Ok(_) => {
+                                fs::create_dir_all(
+                                        env::temp_dir()
+                                        .join("vplugin")
+                                        .join(&plugin.metadata.as_ref().unwrap().name)
+                                ).expect("Cannot create plugin directory!");
+                        }
                 }
                 Ok(plugin)
         }
@@ -328,20 +342,16 @@ impl Plugin {
         pub fn load_metadata(&mut self) -> Result<(), VPluginError> {
                 match PluginMetadata::load(self) {
                         Ok (v) => {
+                                let plugin_dir_name = env::temp_dir()
+                                        .join("vplugin")
+                                        .join(&v.name);
+
+                                fs::create_dir_all(&plugin_dir_name).unwrap();
+                                fs::copy(&v.objfile, plugin_dir_name.join(&v.objfile)).unwrap();
+
                                 self.raw       = unsafe {
-                                        init_now!(Library::new(format!("/tmp/{}", v.objfile)).unwrap())
+                                        init_now!(Library::new(plugin_dir_name.join(&v.objfile)).unwrap())
                                 };
-
-                                log::trace!("Loaded plugin metadata for {}. Printing information...", self.filename);
-                                log::trace!("Plugin ID (Name):\t{}", v.name);
-                                log::trace!("Plugin Version:\t{}", v.version);
-                                log::trace!("Plugin Implementation File:\t{}", v.objfile);
-                                if v.description.is_some() {
-                                        log::trace!("Plugin Description:\t{}", v.description.as_ref().unwrap());
-                                } else {
-                                        log::info!("Plugin {} does not have a description", v.name);
-                                }
-
                                 self.is_valid = true;
                                 self.metadata = init_now!(v);
 
