@@ -443,20 +443,15 @@ impl Plugin {
 
 impl Drop for Plugin {
         fn drop(&mut self) {
-                let real_path = format!(
-                        "{}/vplugin/{}",
-                        env::temp_dir().display(),
-                        self.metadata.as_ref().unwrap().name
-                );
-                let plugin_dir = Path::new(
-                        &real_path
-                );
-                
-                match std::fs::remove_dir_all(&plugin_dir) {
+                let plugin_dir_name = env::temp_dir()
+                        .join("vplugin")
+                        .join(&self.metadata.as_ref().unwrap().name);
+
+                match std::fs::remove_dir_all(&plugin_dir_name) {
                         Err(e) => {
                                 log::warn!(
                                         "Couldn't remove directory '{}' corresponding to plugin '{}': {}",
-                                        plugin_dir.display(),
+                                        plugin_dir_name.display(),
                                         self.metadata.as_ref().unwrap().name,
                                         e.to_string()
                                 )
