@@ -1,6 +1,6 @@
 <div align="center">
         <img src="assets/logo.svg" width="244"></img>
-        <h2>VPlugin: A plugin framework for Rust.</h2>
+        <h2>VPlugin 🔌: A plugin framework for Rust.</h2>
         <img src="https://img.shields.io/crates/v/vplugin?style=flat-square">
         <img src="https://img.shields.io/docsrs/vplugin?label=Documentation&style=flat-square">
         <img src="https://img.shields.io/github/license/VPlugin/VPlugin?style=flat-square">
@@ -20,6 +20,12 @@ I found myself ever since starting out programming struggling to find a proper s
 
 Generally, VPlugin aims to become a low-level block in your application, where you are going to build everything else on top of. VPlugin will **not** create the plugin system for you; It will do the dirty under-the-hood work and give you a high-level abstraction over it.
 
+## Features
+- 🚀 Blazingly Fast (Thanks to Rust!)
+- 🇩🔥 Easy to use, without compromises on flexibility.
+- 💻 Cross-platform and portable, will work on most major platforms.
+- ❤️‍🔥 Modern: Forget nasty workarounds and strange errors in your code.
+
 ## MSRV
 VPlugin officially supports only the latest **stable** version of the Rust language. You may be able to get it to compile on a few older versions, but do not be confused if your computer blows up or you get a ton of error messages on the console.
 
@@ -28,11 +34,6 @@ This repository contains the library that implements VPlugin, as well as the Plu
 
 ## Examples
 An example application is available [here](https://github.com/VPlugin/vplugin-example). For more information about it, see the README file.
-
-## VPlugin's Features:
-- High performance thanks to Rust's blazingly fast implementation.
-- Straightforward and minimal: Won't get in your way.
-- Multi-threaded: Allows you to run everything on another thread. Excludes plugins, which may use code that isn't multi-thread compatible.
 
 ## Supported Languages
 Generally, most compiled languages will be supported, as long as they can build as a shared object file (shared library). This means that while VPlugin itself is Rust-only for now, it's perfectly possible to write a plugin usable by VPlugin in C, C++ or even Vala. See [the Plugin Specification](./spec/PluginFormat.md) for more details. Key requirement here is a way to export your types to those languages, which requires giving off safety guarantees and a lot of expertise.
