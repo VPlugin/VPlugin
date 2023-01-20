@@ -38,7 +38,6 @@
 //!     let mut plugin = manager.load_plugin(FILENAME).expect("Couldn't load plugin");
 //! 
 //!     manager.set_entry_point("app_entry");
-//!     plugin.load_metadata().expect("Couldn't load metadata");
 //! 
 //!     manager.begin_plugin().expect("Couldn't begin plugin");
 //!     if plugin.terminate().is_err() {
