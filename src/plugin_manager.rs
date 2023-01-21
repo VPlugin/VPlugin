@@ -178,8 +178,6 @@ impl PluginManager {
                 for plugin in self.plugin.iter_mut() {
                         plugin.terminate().unwrap_or_else(|_| log::warn!("Error occured while unloading plugin."));
                 }
-
-                drop(self.entry);
         }
 }
 
@@ -191,9 +189,18 @@ impl Default for PluginManager {
 
 impl Drop for PluginManager {
         fn drop(&mut self) {
-            std::fs::remove_dir_all(
+            match std::fs::remove_dir_all(
                 env::temp_dir()
                 .join("vplugin")
-            );
+            ) {
+                Ok(()) => (),
+                Err(e) => {
+                        log::warn!(
+                                "Couldn't remove VPlugin: {} (err {}). No cleanup will be performed.",
+                                e.to_string(),
+                                e.raw_os_error().unwrap()
+                        )
+                }
+            }
         }
 }
