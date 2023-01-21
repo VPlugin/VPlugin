@@ -200,6 +200,7 @@ impl Drop for PluginManager {
                         .unwrap_or_else(|e|
                                 log::error!("Couldn't unload plugin (VPlugin Error): {}", e.to_string())
                         );
+                drop(plug);
             }
             match std::fs::remove_dir_all(&vplugin_dir) {
                 Ok(()) => log::trace!("Removed directory: {}", vplugin_dir.display()),
