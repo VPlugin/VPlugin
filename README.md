@@ -7,7 +7,7 @@
         <img src="https://github.com/VPlugin/VPlugin/actions/workflows/default.yml/badge.svg">
         <br>
         <a href="javascript:void(0)">Website</a> |
-        <a href="https://github.com/AndroGR/VPlugin/issues">Issues</a> |
+        <a href="https://github.com/VPlugin/VPlugin/issues">Issues</a> |
         <a href="https://docs.rs/crate/vplugin">Documentation</a>
         <p style="padding-top: 12px;">
                 VPlugin is a Rust framework to develop and use plugins on applications and libraries, <br> including but not limited to games, text editors, command line and graphical applications.
