@@ -15,7 +15,7 @@
 */
 
 extern crate libloading;
-use std::ffi::{c_void, c_int};
+use std::{ffi::{c_void, c_int}, env};
 use libloading::Symbol;
 use crate::error::VPluginError;
 
@@ -109,7 +109,7 @@ impl PluginManager {
         ) -> Result<unsafe extern fn(P) -> T, VPluginError> {
                 plugin.get_custom_hook(hook)
         }
-
+        
         /// **Executes the entry point of the plugin.**
         /// 
         /// This function is used to execute the entry point of the plugin,
@@ -186,5 +186,14 @@ impl PluginManager {
 impl Default for PluginManager {
         fn default() -> Self {
                 Self::new()
+        }
+}
+
+impl Drop for PluginManager {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(
+                env::temp_dir()
+                .join("vplugin")
+            );
         }
 }
