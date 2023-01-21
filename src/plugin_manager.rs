@@ -194,6 +194,13 @@ impl Default for PluginManager {
 impl Drop for PluginManager {
         fn drop(&mut self) {
             let vplugin_dir = env::temp_dir().join("vplugin");
+            for plug in &mut self.plugin {
+                plug
+                        .terminate()
+                        .unwrap_or_else(|e|
+                                log::error!("Couldn't unload plugin (VPlugin Error): {}", e.to_string())
+                        );
+            }
             match std::fs::remove_dir_all(&vplugin_dir) {
                 Ok(()) => log::trace!("Removed directory: {}", vplugin_dir.display()),
                 Err(e) => {
