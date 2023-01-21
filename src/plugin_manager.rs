@@ -56,6 +56,10 @@ pub type VHook = unsafe extern "C" fn(*mut c_void) -> c_int;
 impl PluginManager {
         /// Creates a new, empty PluginManager and returns it.
         pub fn new() -> Self {
+                #[cfg(unix)] /* Windows applications often need admin rights. */
+                if is_superuser::is_superuser() {
+                        panic!("VPlugin may not be run")
+                }
                 Self {
                         plugin : Vec::new(),
                         entry  : String::from("vplugin_init"),
@@ -189,11 +193,9 @@ impl Default for PluginManager {
 
 impl Drop for PluginManager {
         fn drop(&mut self) {
-            match std::fs::remove_dir_all(
-                env::temp_dir()
-                .join("vplugin")
-            ) {
-                Ok(()) => (),
+            let vplugin_dir = env::temp_dir().join("vplugin");
+            match std::fs::remove_dir_all(&vplugin_dir) {
+                Ok(()) => log::trace!("Removed directory: {}", vplugin_dir.display()),
                 Err(e) => {
                         log::warn!(
                                 "Couldn't remove VPlugin: {} (err {}). No cleanup will be performed.",
