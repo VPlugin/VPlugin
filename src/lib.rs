@@ -96,7 +96,6 @@ extern crate toml;
 mod plugin;
 mod plugin_manager;
 mod error;
-pub mod tutorial;
 
 /// Reexports of VPlugin's types.
 pub use plugin_manager::*;
