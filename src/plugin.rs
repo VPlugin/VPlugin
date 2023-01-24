@@ -26,7 +26,6 @@ use std::fs::{
         File
 };
 use serde::Deserialize;
-use serde_derive::Deserialize;
 use libloading::{
         Library,
         Symbol
