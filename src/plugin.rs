@@ -25,7 +25,7 @@ use std::fs::{
         self,
         File
 };
-use serde::Deserialize;
+use serde_derive::Deserialize;
 use libloading::{
         Library,
         Symbol
@@ -97,7 +97,7 @@ pub struct Plugin {
 impl PluginMetadata {
         /// Reads a metadata.toml file or returns an error. This is useful
         /// for libraries that wish to make use of VPlugin's internals.
-        pub fn read_from_str<T: for<'a> Deserialize<'a>>(string: &str) -> Result<T, VPluginError> {
+        pub fn read_from_str<T: for<'a> serde::Deserialize<'a>>(string: &str) -> Result<T, VPluginError> {
                 let data: T = match toml::from_str(string) {
                         Ok (t) => t,
                         Err(e) => {
