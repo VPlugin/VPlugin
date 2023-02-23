@@ -419,7 +419,10 @@ impl Plugin {
                 Ok(())
         }
 
-        /// Returns whether the function specified is available on the plugin.
+        /// ###### *Returns whether the function specified is available on the plugin.*
+        /// 
+        /// **Deprecated**: This function has been replaced with [Plugin::is_symbol_present](crate::plugin::Plugin::is_symbol_present).
+        #[deprecated = "Replaced by Plugin::is_symbol_present which is more accurate and safer."]
         pub fn is_function_available(&self, name: &str) -> bool {
                 if self.raw.is_none() {
                         log::warn!("Avoid using misinitialized plugins as properly loaded ones (Missing shared object file).");
@@ -427,6 +430,44 @@ impl Plugin {
                 }
                 unsafe {
                         self.raw.as_ref().unwrap().get::<unsafe extern "C" fn()>(name.as_bytes()).is_ok()
+                }
+        }
+
+        /// ### Returns whether the requested symbol is present in the plugin implementation.
+        /// 
+        /// This function returns a boolean that indicates whether a symbol requested (That is, a global
+        /// variable or a function) is available to the caller.
+        /// 
+        /// > :warning: NOTE: The symbol is not checked as to whether it has the same type as the one requested.
+        /// For example, if symbol a has type `i32` but you request a function symbol named `a`, this function
+        /// will most likely still return true. This is because at runtime, types are not available, and
+        /// VPlugin does not yet test if the symbol is callable (A function).
+        /// 
+        /// ## Example
+        /// ```
+        /// use vplugin::Plugin;
+        /// let plugin = Plugin::load("file.vpl").unwrap();
+        /// 
+        /// if plugin.is_symbol_present<fn(i32, i32) -> u8>("myfunc") {
+        ///     /* Symbol present. */
+        /// } else {
+        ///     /* Symbol not present. */
+        /// }
+        /// ```
+        /// 
+        /// ## Panics
+        /// Panics if `fn_name` contains invalid encoding or `self` has not yet been properly initialized.
+        /// ```
+        pub fn is_symbol_present<T, S>(&self, fn_name: S) -> bool
+        where
+                S: Sized + Into<String>
+        {
+                unsafe {
+                        self.raw
+                                .as_ref()
+                                .unwrap()
+                                .get::<T>(fn_name.into().as_bytes())
+                                .is_ok()
                 }
         }
 
