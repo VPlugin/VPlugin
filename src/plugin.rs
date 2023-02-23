@@ -438,10 +438,10 @@ impl Plugin {
         /// This function returns a boolean that indicates whether a symbol requested (That is, a global
         /// variable or a function) is available to the caller.
         /// 
-        /// > :warning: NOTE: The symbol is not checked as to whether it has the same type as the one requested.
+        /// **NOTE: The symbol is not checked as to whether it has the same type as the one requested.
         /// For example, if symbol a has type `i32` but you request a function symbol named `a`, this function
         /// will most likely still return true. This is because at runtime, types are not available, and
-        /// VPlugin does not yet test if the symbol is callable (A function).
+        /// VPlugin does not yet test if the symbol is callable (A function).**
         /// 
         /// ## Example
         /// ```
@@ -457,7 +457,6 @@ impl Plugin {
         /// 
         /// ## Panics
         /// Panics if `fn_name` contains invalid encoding or `self` has not yet been properly initialized.
-        /// ```
         pub fn is_symbol_present<T, S>(&self, fn_name: S) -> bool
         where
                 S: Sized + Into<String>
