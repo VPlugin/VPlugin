@@ -193,6 +193,9 @@ impl Default for PluginManager {
 
 impl Drop for PluginManager {
         fn drop(&mut self) {
+            if self.plugin.len() < 1 {
+                return;
+            }
             let vplugin_dir = env::temp_dir().join("vplugin");
             for plug in &mut self.plugin {
                 plug
@@ -206,9 +209,9 @@ impl Drop for PluginManager {
                 Ok(()) => log::trace!("Removed directory: {}", vplugin_dir.display()),
                 Err(e) => {
                         log::warn!(
-                                "Couldn't remove VPlugin: {} (err {}). No cleanup will be performed.",
+                                "Couldn't remove {}: {} . No cleanup will be performed.",
+                                vplugin_dir.display(),
                                 e.to_string(),
-                                e.raw_os_error().unwrap()
                         )
                 }
             }
