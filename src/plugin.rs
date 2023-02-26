@@ -221,7 +221,13 @@ impl Plugin {
 
                 /* Uncompressing the archive. */
                 log::trace!("Uncompressing plugin {}", filename.into());
-                let mut archive = zip::ZipArchive::new(file).unwrap();
+                let mut archive = match zip::ZipArchive::new(file) {
+                        Ok (v) => v,
+                        Err(e) => {
+                                log::error!("Archive error: {}. Not extracting plugin.", e.to_string());
+                                return Err(VPluginError::InvalidPlugin)
+                        }
+                };
                 for i in 0..archive.len() {
                         let mut file = archive.by_index(i).unwrap();
                         let outpath = match file.enclosed_name() {
