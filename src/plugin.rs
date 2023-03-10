@@ -90,7 +90,6 @@ pub struct Plugin {
         pub(crate) is_valid: bool,
         pub(crate) started : bool,
         pub(crate) raw     : LaterInitialized<Library>,
-        pub(crate) archive : ZipArchive<File>,
 
 }
 
@@ -221,13 +220,27 @@ impl Plugin {
 
                 /* Uncompressing the archive. */
                 log::trace!("Uncompressing plugin {}", filename.into());
-                let mut archive = match zip::ZipArchive::new(file) {
+                let archive = match zip::ZipArchive::new(file) {
                         Ok (v) => v,
                         Err(e) => {
                                 log::error!("Archive error: {}. Not extracting plugin.", e.to_string());
                                 return Err(VPluginError::InvalidPlugin)
                         }
                 };
+                Self::extract_archive_files(archive);
+
+                let plugin = Self {
+                        metadata: initialize_later!(),
+                        raw     : initialize_later!(),
+                        filename: filename.into(),
+                        is_valid: false,
+                        started : false,
+                };
+
+                Ok(plugin)
+        }
+
+        fn extract_archive_files(mut archive: ZipArchive<File>) {
                 for i in 0..archive.len() {
                         let mut file = archive.by_index(i).unwrap();
                         let outpath = match file.enclosed_name() {
@@ -248,18 +261,8 @@ impl Plugin {
                                 std::io::copy(&mut file, &mut outfile).unwrap();
                         }
                 }
-
-                let plugin = Self {
-                        metadata: initialize_later!(),
-                        raw     : initialize_later!(),
-                        filename: filename.into(),
-                        is_valid: false,
-                        started : false,
-                        archive,
-                };
-
-                Ok(plugin)
         }
+
         /// Loads a plugin into memory and returns it.
         /// After 0.2.0, metadata is also loaded in this call so avoid calling it
         /// again (For your convenience, it has been marked as deprecated).
