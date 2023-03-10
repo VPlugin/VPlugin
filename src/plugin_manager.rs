@@ -31,8 +31,8 @@ use super::plugin::Plugin;
 /// (Yes, even unloading plugins from memory) and should be a core part
 /// of your application.
 #[repr(C)]
-pub struct PluginManager {
-        plugin : Vec<Plugin>,
+pub struct PluginManager<'plug> {
+        plugin : Vec<&'plug mut Plugin>,
         entry  : String,
         running: bool,
         errcode: u32
@@ -53,13 +53,9 @@ pub struct PluginManager {
 /// and a ton of other issues.
 pub type VHook = unsafe extern "C" fn(*mut c_void) -> c_int;
 
-impl PluginManager {
+impl<'plug> PluginManager<'plug> {
         /// Creates a new, empty PluginManager and returns it.
         pub fn new() -> Self {
-                #[cfg(unix)] /* Windows applications often need admin rights. */
-                if is_superuser::is_superuser() {
-                        panic!("VPlugin may not be run")
-                }
                 Self {
                         plugin : Vec::new(),
                         entry  : String::from("vplugin_init"),
@@ -73,7 +69,8 @@ impl PluginManager {
         /// 
         /// See also: [register_plugin](PluginManager::register_plugin).
         pub fn load_plugin(&mut self, filename: &str) -> Result<Plugin, VPluginError> {
-                Plugin::load(filename)
+                let plugin = Plugin::load(filename);
+                plugin
         }
 
         /// Registers a plugin into the PluginManager.
@@ -81,7 +78,8 @@ impl PluginManager {
         /// This step will be useful if you want to automatically remove plugins
         /// when they exit before your application, or if you need to leave your
         /// plugin idle, and automatically detect any errors.
-        pub fn register_plugin(&mut self, plugin: Plugin) -> Result<(), VPluginError> {
+        #[deprecated(since = "v0.3.0", note = "This function will be called automatically since v0.3.0")]
+        pub fn register_plugin(&mut self, plugin: &'plug mut Plugin) -> Result<(), VPluginError> {
                 self.plugin.push(plugin);
                 Ok(())
         }
@@ -118,7 +116,7 @@ impl PluginManager {
         /// 
         /// This function is used to execute the entry point of the plugin,
         /// effectively starting the plugin like a normal executable.
-        pub fn begin_plugin(&mut self, plugin: &mut Plugin) -> Result<(), VPluginError>{
+        pub fn begin_plugin(&mut self, plugin: &'plug mut Plugin) -> Result<(), VPluginError> {
                 if !plugin.is_valid {
                         log::error!(
                                 "Attempted to start plugin '{}', which is not marked as valid.",
@@ -159,40 +157,24 @@ impl PluginManager {
                         }
                 }
                 plugin.started = true;
-                Ok(())
-        }
 
-        /// ## Shutdown the PluginManager
-        /// This function is used to shutdown the plugin manager,
-        /// by removing all loaded plugins, neutralizing its state
-        /// and making some quick cleanup.
-        /// 
-        /// ## Unloading Plugins
-        /// By default, the plugin manager will try to unload all plugins
-        /// normally, by calling its function destructor. If that fails,
-        /// then the failed plugin will be forced to unload itself,
-        /// which may cause undefined behavior.
-        /// 
-        /// ## Comparing this function with `impl Drop for PluginManager`
-        /// This function cannot implement the `Drop` trait because it takes
-        /// ownership of the plugin manager, to ensure that the plugin manager
-        /// will not be accidentally reused (Use after free). It does call
-        /// `drop` on the plugin manager though automatically.
-        pub extern fn shutdown(mut self) {
-                for plugin in self.plugin.iter_mut() {
-                        plugin.terminate().unwrap_or_else(|_| log::warn!("Error occured while unloading plugin."));
-                }
+                #[allow(deprecated)]
+                self.register_plugin(plugin).unwrap_or_else(|e|{ panic!("Unable to register plugin: {}", e.to_string())});
+                Ok(())
         }
 }
 
-impl Default for PluginManager {
+impl Default for PluginManager<'_> {
         fn default() -> Self {
                 Self::new()
         }
 }
 
-impl Drop for PluginManager {
+impl Drop for PluginManager<'_> {
         fn drop(&mut self) {
+            for plugin in self.plugin.iter_mut() {
+                plugin.terminate().unwrap_or_else(|_| log::warn!("Error occured while unloading plugin."));
+            }
             if self.plugin.len() < 1 {
                 return;
             }
