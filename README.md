@@ -22,7 +22,7 @@ Generally, VPlugin aims to become a low-level block in your application, where y
 
 ## Features
 - 🚀 Blazingly Fast (Thanks to Rust!)
-- 🇩🔥 Easy to use, without compromises on flexibility.
+- 🔥 Easy to use, without compromises on flexibility.
 - 💻 Cross-platform and portable, will work on most major platforms.
 - ❤️‍🔥 Modern: Forget nasty workarounds and strange errors in your code.
 
