@@ -164,12 +164,6 @@ impl<'plug> PluginManager<'plug> {
         }
 }
 
-impl Default for PluginManager<'_> {
-        fn default() -> Self {
-                Self::new()
-        }
-}
-
 impl Drop for PluginManager<'_> {
         fn drop(&mut self) {
             for plugin in self.plugin.iter_mut() {
