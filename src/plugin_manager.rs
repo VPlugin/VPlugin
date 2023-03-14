@@ -105,7 +105,7 @@ impl<'plug> PluginManager<'plug> {
         /// - `P` is the actual function declaration (Don't add `unsafe extern fn`, it's already specified).
         /// The function pointer returned can then be used to exchange data between the server and the plugin.
         pub fn get_custom_hook<P, T>(
-                &mut self,
+                &self,
                 plugin: &'plug Plugin,
                 hook: &str
         ) -> Result<unsafe extern fn(P) -> T, VPluginError> {
