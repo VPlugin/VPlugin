@@ -95,7 +95,7 @@ impl<'plug> PluginManager<'plug> {
 
         /// Returns a hook from the plugin specified.
         /// See [VHook](crate::plugin_manager::VHook) for more information.
-        pub fn get_hook(&mut self, plugin: &'plug Plugin, hook: &str) -> Result<VHook, VPluginError> {
+        pub fn get_hook(&mut self, plugin: &Plugin, hook: &str) -> Result<VHook, VPluginError> {
                 plugin.get_hook(hook)
         }
 
@@ -106,7 +106,7 @@ impl<'plug> PluginManager<'plug> {
         /// The function pointer returned can then be used to exchange data between the server and the plugin.
         pub fn get_custom_hook<P, T>(
                 &self,
-                plugin: &'plug Plugin,
+                plugin: &Plugin,
                 hook: &str
         ) -> Result<unsafe extern fn(P) -> T, VPluginError> {
                 plugin.get_custom_hook(hook)
