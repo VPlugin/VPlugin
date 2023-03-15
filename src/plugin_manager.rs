@@ -22,14 +22,13 @@ use crate::error::VPluginError;
 use super::plugin::Plugin;
 
 /// ## PluginManager
-/// The plugin manager is responsible for managing all loaded plugins,
-/// like deploying them, attaching hooks and executing them.
+/// A `PluginManager` is responsible for managing all loaded plugins,
+/// like deploying them, attaching hooks, cleaning up the filesystem, etc.
+/// You should have it as a singleton instance in your application.
 /// 
-/// While it could be technically possible to avoid its usage, all
-/// plugins expect some alternative helper for usual tasks.
-/// The PluginManager is responsible for all tasks not involving plugins
-/// (Yes, even unloading plugins from memory) and should be a core part
-/// of your application.
+/// Since [v0.3.0](https://github.com/VPlugin/VPlugin/releases/tag/0.3.0), the plugin manager implicitly
+/// keeps a reference to all loaded plugins meaning
+/// 
 #[repr(C)]
 pub struct PluginManager<'plug> {
         plugin : Vec<&'plug mut Plugin>,
@@ -71,6 +70,28 @@ impl<'plug> PluginManager<'plug> {
         pub fn load_plugin(&mut self, filename: &str) -> Result<Plugin, VPluginError> {
                 let plugin = Plugin::load(filename);
                 plugin
+        }
+
+        /// **Returns a reference to the internal vector keeping all plugins.**
+        /// 
+        /// Since the return type is a vector, the plugins are ordered based on the order
+        /// they were loaded. If you wish to get a hold of a plugin loaded somewhere in the
+        /// middle, you will have to already have some sort of tracking variable available.
+        /// 
+        /// ## Example
+        /// ```
+        /// let files = vec![ "plugin1.vpl", "plugin2.vpl", "plugin3.vpl" ];
+        /// for file in files {
+        ///     plug_mgr.load_plugin(file).expect("Cant load plugin");
+        /// }
+        /// 
+        /// let mut plugins = plugin_manager.get_loaded_plugins();
+        /// println!("plugins[4] = {:?}", plugins[4]);
+        /// 
+        /// ```
+        #[inline]
+        pub fn get_loaded_plugins(&self) -> &Vec<&'plug mut Plugin> {
+                &self.plugin
         }
 
         /// Registers a plugin into the PluginManager.
