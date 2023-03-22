@@ -26,12 +26,8 @@ use super::plugin::Plugin;
 /// like deploying them, attaching hooks, cleaning up the filesystem, etc.
 /// You should have it as a singleton instance in your application.
 /// 
-/// Since [v0.3.0](https://github.com/VPlugin/VPlugin/releases/tag/0.3.0), the plugin manager implicitly
-/// keeps a reference to all loaded plugins meaning
-/// 
 #[repr(C)]
-pub struct PluginManager<'plug> {
-        plugin : Vec<&'plug mut Plugin>,
+pub struct PluginManager {
         entry  : String,
         running: bool,
         errcode: u32
@@ -52,11 +48,10 @@ pub struct PluginManager<'plug> {
 /// and a ton of other issues.
 pub type VHook = unsafe extern "C" fn(*mut c_void) -> c_int;
 
-impl<'plug> PluginManager<'plug> {
+impl PluginManager {
         /// Creates a new, empty PluginManager and returns it.
         pub fn new() -> Self {
                 Self {
-                        plugin : Vec::new(),
                         entry  : String::from("vplugin_init"),
                         running: false, /* No plugins running */
                         errcode: 0
@@ -72,36 +67,9 @@ impl<'plug> PluginManager<'plug> {
                 plugin
         }
 
-        /// **Returns a reference to the internal vector keeping all plugins.**
-        /// 
-        /// Since the return type is a vector, the plugins are ordered based on the order
-        /// they were loaded. If you wish to get a hold of a plugin loaded somewhere in the
-        /// middle, you will have to already have some sort of tracking variable available.
-        /// 
-        /// ## Example
-        /// ```
-        /// let files = vec![ "plugin1.vpl", "plugin2.vpl", "plugin3.vpl" ];
-        /// for file in files {
-        ///     plug_mgr.load_plugin(file).expect("Cant load plugin");
-        /// }
-        /// 
-        /// let mut plugins = plugin_manager.get_loaded_plugins();
-        /// println!("plugins[4] = {:?}", plugins[4]);
-        /// 
-        /// ```
-        #[inline]
-        pub fn get_loaded_plugins(&self) -> &Vec<&'plug mut Plugin> {
-                &self.plugin
-        }
-
-        /// Registers a plugin into the PluginManager.
-        /// 
-        /// This step will be useful if you want to automatically remove plugins
-        /// when they exit before your application, or if you need to leave your
-        /// plugin idle, and automatically detect any errors.
-        #[deprecated(since = "v0.3.0", note = "This function will be called automatically since v0.3.0")]
-        pub fn register_plugin(&mut self, plugin: &'plug mut Plugin) -> Result<(), VPluginError> {
-                self.plugin.push(plugin);
+        /// **This function is no longer relevant, it's only kept for compatibility.**
+        #[deprecated(since = "v0.3.0", note = "This function is no longer relevant, it's only kept for compatibility.")]
+        pub fn register_plugin(&mut self, plugin: &mut Plugin) -> Result<(), VPluginError> {
                 Ok(())
         }
 
@@ -137,7 +105,7 @@ impl<'plug> PluginManager<'plug> {
         /// 
         /// This function is used to execute the entry point of the plugin,
         /// effectively starting the plugin like a normal executable.
-        pub fn begin_plugin(&mut self, plugin: &'plug mut Plugin) -> Result<(), VPluginError> {
+        pub fn begin_plugin(&mut self, plugin: &mut Plugin) -> Result<(), VPluginError> {
                 if !plugin.is_valid {
                         log::error!(
                                 "Attempted to start plugin '{}', which is not marked as valid.",
@@ -185,23 +153,9 @@ impl<'plug> PluginManager<'plug> {
         }
 }
 
-impl Drop for PluginManager<'_> {
+impl Drop for PluginManager {
         fn drop(&mut self) {
-            for plugin in self.plugin.iter_mut() {
-                plugin.terminate().unwrap_or_else(|_| log::warn!("Error occured while unloading plugin."));
-            }
-            if self.plugin.len() < 1 {
-                return;
-            }
             let vplugin_dir = env::temp_dir().join("vplugin");
-            for plug in &mut self.plugin {
-                plug
-                        .terminate()
-                        .unwrap_or_else(|e|
-                                log::error!("Couldn't unload plugin (VPlugin Error): {}", e.to_string())
-                        );
-                drop(plug);
-            }
             match std::fs::remove_dir_all(&vplugin_dir) {
                 Ok(()) => log::trace!("Removed directory: {}", vplugin_dir.display()),
                 Err(e) => {
