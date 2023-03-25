@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Aggelos Tselios.
+ * Copyright 2022-2023 Aggelos Tselios.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 */
 
 extern crate libloading;
-use std::{ffi::{c_void, c_int}, env};
+use std::{ffi::{c_void, c_int, OsStr}, env};
 use libloading::Symbol;
 use crate::error::VPluginError;
 
@@ -61,15 +61,21 @@ impl PluginManager {
         /// Loads a plugin through PluginManager. This function calls Plugin::load(filename)
         /// under the hood, so you can also use it.
         /// 
-        /// See also: [register_plugin](PluginManager::register_plugin).
-        pub fn load_plugin(&mut self, filename: &str) -> Result<Plugin, VPluginError> {
-                let plugin = Plugin::load(filename);
-                plugin
+        /// ## Parameters
+        /// * `filename` A path to the plugin to load.
+        /// 
+        /// ## Panics
+        /// May panic if `filename` is not a valid string.
+        pub fn load_plugin<P: Copy + Into<String> + AsRef<OsStr>>(&mut self, filename: P) -> Result<Plugin, VPluginError> {
+                if filename.into().is_empty() {
+                        return Err(VPluginError::ParametersError)
+                }
+                Plugin::load(filename)
         }
 
         /// **This function is no longer relevant, it's only kept for compatibility.**
         #[deprecated(since = "v0.3.0", note = "This function is no longer relevant, it's only kept for compatibility.")]
-        pub fn register_plugin(&mut self, plugin: &mut Plugin) -> Result<(), VPluginError> {
+        pub fn register_plugin(&mut self, _plugin: &mut Plugin) -> Result<(), VPluginError> {
                 Ok(())
         }
 
@@ -145,10 +151,8 @@ impl PluginManager {
                                 return Err(VPluginError::FailedToInitialize);
                         }
                 }
-                plugin.started = true;
 
-                #[allow(deprecated)]
-                self.register_plugin(plugin).unwrap_or_else(|e|{ panic!("Unable to register plugin: {}", e.to_string())});
+                plugin.started = true;
                 Ok(())
         }
 }

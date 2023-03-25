@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Aggelos Tselios.
+ * Copyright 2022-2023 Aggelos Tselios.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
+
 
 #![allow(dead_code)]
 
@@ -291,6 +292,64 @@ impl Plugin {
                         }
                 }
                 Ok(plugin)
+        }
+
+        /// **Executes the plugin.**
+        /// 
+        /// This function is effectively a standalone replacement for when you want to start
+        /// a plugin but don't have access to the global plugin manager.\
+        /// There are a series of reasons you probably want to favor the normal
+        /// [`PluginManager`](crate::plugin::PluginManager)'s implementation:
+        /// * This function **ALWAYS** assumes your plugin's entry point is called `vplugin_init`. Any
+        /// other name will simply not work.
+        /// * If the plugin has already been started, no checks will be done. Meaning the same plugin will be started
+        /// twice.
+        /// * Last,
+        /// 
+        /// In general, this function is intended mainly for test usage and not actual code.
+        /// 
+        /// ## Example
+        /// ```rust
+        /// use vplugin::Plugin;
+        /// fn main() {
+        ///     let mut plugin = Plugin::load("plugin.vpl").unwrap();
+        ///     plugin.begin().expect("Error");
+        /// }
+        /// ```
+        pub fn begin(&mut self) -> Result<(), VPluginError> {
+                if !self.is_valid {
+                        log::error!(
+                                "Attempted to start plugin '{}', which is not marked as valid.",
+                                self.get_metadata().as_ref().unwrap().name
+                        );
+                        return Err(VPluginError::InvalidPlugin);
+                }
+
+                let plugin_entry: Symbol<unsafe extern "C" fn() -> i32>;
+                unsafe {
+                        plugin_entry = match self.raw
+                                        .as_ref()
+                                        .unwrap()
+                                        .get(b"vplugin_init\0")
+                                        {
+                                                Ok(fnc) => fnc,
+                                                Err(e)  => {
+                                                        log::error!(
+                                                                "Couldn't initialize plugin: {}",
+                                                                e.to_string()
+                                                        );
+                                                        return Err(VPluginError::FailedToInitialize)
+                                                }
+                                        };
+
+                        let ___result = plugin_entry();
+                        if ___result != 0 {
+                                return Err(VPluginError::FailedToInitialize);
+                        }
+                }
+                
+                self.started = true;
+                Ok(())
         }
 
         /// Returns a VHook (Generic function pointer) that can be used to exchange data between
