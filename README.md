@@ -18,7 +18,13 @@
 ## But why?
 I found myself ever since starting out programming struggling to find a proper solution to creating a plugin API without copying other's code. Eventually, I decided to write my own library, which ended up becoming a fully-featured set of tools that would allow me to easily write a plugin system from scratch without having to do the same thing 1000 times.
 
-Generally, VPlugin aims to become a low-level block in your application, where you are going to build everything else on top of. VPlugin will **not** create the plugin system for you; It will do the dirty under-the-hood work and give you a high-level abstraction over it.
+Generally, VPlugin aims to become a low-level block in your application, where you are going to build everything else on top of. VPlugin will **not only** create the plugin system for you; It will do the dirty under-the-hood work and give you a high-level abstraction over it.
+
+## Picking Version
+The `master` tree is used for the entire development, so avoid using it unless you are willing to suddenly have your project not compiling for any reason. While no "stable release" has been done yet (VPlugin can generally be considered in an alpha state) you are advised to use the latest [crates.io release](https://crates.io/crates/vplugin),
+which is verified to work.
+
+> Often upgrading versions may result in API breakage. This is natural; See the changelogs and adjust your codebase accordingly.
 
 ## Features
 - 🚀 Blazingly Fast (Thanks to Rust!)
