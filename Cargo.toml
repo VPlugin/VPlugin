@@ -25,5 +25,6 @@ non_reusable_plugins = [ ]
 doctest    = false
 crate-type = [
         "rlib",
+        "cdylib"
 ]
 
