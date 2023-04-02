@@ -377,10 +377,14 @@ impl Plugin {
                 Self::load_vhook(self, fn_name)
         }
 
-        /// Implemented as public in [PluginManager](crate::plugin_manager::PluginManager).
-        pub(crate) fn get_custom_hook<P, T>(
+        /// Returns a hook as specified by the generic parameters
+        /// 'T' and 'P':
+        /// - `T` is the return type of the function representing the hook,
+        /// - `P` is the actual function declaration (Don't add `unsafe extern fn`, it's already specified).
+        /// The function pointer returned can then be used to exchange data between the server and the plugin.
+        pub fn get_custom_hook<P, T>(
                 &self,
-                fn_name: &str
+                fn_name: impl AsRef<str>,
         ) -> Result<unsafe extern fn(P) -> T, VPluginError> {
                 if !self.started || !self.is_valid || self.raw.is_none() {
                         log::error!("Cannot load custom hook from non-started or invalid plugin.");
@@ -391,7 +395,7 @@ impl Plugin {
                         hook = match self.raw
                                 .as_ref()
                                 .unwrap_unchecked()
-                                .get(format!("{}\0", fn_name).as_bytes())
+                                .get(format!("{}\0", fn_name.as_ref()).as_bytes())
                         {
                             Ok (v) => v,
                             Err(_) => return Err(VPluginError::MissingSymbol),

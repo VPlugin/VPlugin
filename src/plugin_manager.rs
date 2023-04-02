@@ -102,7 +102,7 @@ impl PluginManager {
         pub fn get_custom_hook<P, T>(
                 &self,
                 plugin: &Plugin,
-                hook: &str
+                hook: impl AsRef<str>,
         ) -> Result<unsafe extern fn(P) -> T, VPluginError> {
                 plugin.get_custom_hook(hook)
         }
