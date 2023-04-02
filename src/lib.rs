@@ -93,10 +93,12 @@
 mod plugin;
 mod plugin_manager;
 mod error;
+mod shareable;
 
 /// Reexports of VPlugin's types.
 pub use plugin_manager::*;
 pub use plugin::*;
+pub use shareable::Shareable;
 
 /// Reexporting libloading to assist projects that need the library.
 pub use libloading;
