@@ -115,7 +115,7 @@ impl PluginManager {
                 if !plugin.is_valid {
                         log::error!(
                                 "Attempted to start plugin '{}', which is not marked as valid.",
-                                plugin.get_metadata().as_ref().unwrap().name
+                                plugin.get_metadata().name
                         );
                         return Err(VPluginError::InvalidPlugin);
                 }
@@ -123,7 +123,7 @@ impl PluginManager {
                 if plugin.started {
                         log::error!(
                                 "Plugin '{}' has already been initialized.",
-                                plugin.get_metadata().as_ref().unwrap().name
+                                plugin.get_metadata().name
                         );
                         return Err(VPluginError::FailedToInitialize);
                 }
