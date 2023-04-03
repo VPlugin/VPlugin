@@ -232,9 +232,12 @@ impl Plugin {
                 Self::extract_archive_files(archive);
 
                 let mut plugin = Self {
-                        metadata: unsafe {
-                                #[allow(invalid_value)]
-                                mem::zeroed() // see below why
+                        metadata: PluginMetadata {
+                                description: None,
+                                version: "0.0.0".into(),
+                                name: "NULL".into(),
+                                filename: "-".into(),
+                                objfile: "-".into()
                         },
                         raw     : initialize_later!(),
                         filename: filename.into(),
