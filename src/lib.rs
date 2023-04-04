@@ -23,29 +23,27 @@
 //! plugin part so you can focus on the actual application without having to worry about the
 //! details of your plugins.
 //! 
+//! Note that VPlugin is **NOT** writing your program's API. That's something you will have to handle
+//! manually.
+//! 
 //! # Example
 //! First, creating a skeleton app for the plugin:
-//! `main.rs`:
+//! `**main.rs**`:
 //! 
 //! ```rust
 //! extern crate vplugin;
 //! use vplugin::PluginManager;
-//! 
-//!
-//! const FILENAME: &str = "plugin/example.vpl";
+//! use std::path::PathBuf;
 //! 
 //! fn main() {
-//!     let manager    = PluginManager::new();
-//!     let mut plugin = manager.load_plugin(FILENAME).expect("Couldn't load plugin");
+//!     let plugin_path = PathBuf::from("/path/to/your/plugin.vpl");
+//!     let mut plugin_manager = PluginManager::new();
+//!     plugin_manager.set_entry_point("app_entry");
 //! 
-//!     manager.set_entry_point("app_entry");
-//! 
-//!     manager.begin_plugin().expect("Couldn't begin plugin");
-//!     if plugin.terminate().is_err() {
-//!             unsafe { plugin.force_terminate(); }
-//!             plugin_manager.shutdown();
-//!     };
+//!     let mut plugin = plugin_manager.load(plugin_path).expect("Plugin cannot be loaded!");
+//!     plugin_manager.begin_plugin(&mut plugin).expect("Plugin couldn't be started!");
 //! }
+//!
 //! ```
 //! Then, create a new plugin with [vplugin-init](https://github.com/VPlugin/vplugin-init/):
 //! ```text
@@ -63,14 +61,14 @@
 //! ```rust
 //! /* Entry point */
 //! #[no_mangle]
-//! fn app_entry()-> i32 {
+//! unsafe extern "C" fn app_entry() -> i32 {
 //!     println!("Hello plugin!");
 //!     0
 //! }
 //! 
-//! /* Destructor */
+//! /* Destructor. Will alwa */
 //! #[no_mangle]
-//! fn vplugin_exit() {
+//! unsafe extern "C" fn vplugin_exit() {
 //!     println!("Goodbye plugin!");
 //! }
 //! ```
@@ -93,7 +91,7 @@
 mod plugin;
 mod plugin_manager;
 mod error;
-mod shareable;
+pub mod shareable; // Are you happy `rustc`?
 
 /// Reexports of VPlugin's types.
 pub use plugin_manager::*;
