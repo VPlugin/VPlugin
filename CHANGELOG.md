@@ -7,3 +7,4 @@
 - Added `Shareable` trait to send data into a plugin.
 - `Plugin::get_custom_hook()` is now public.
 - `PluginManager::get_custom_hook()` and `Plugin::get_custom_hook()` accept anything as a string that implements `AsRef<str>`.
+- Plugin metadata is now guaranteed to be loaded while loading the plugin.
