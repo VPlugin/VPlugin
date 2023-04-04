@@ -26,7 +26,6 @@ use std::fs::{
         self,
         File
 };
-use std::mem;
 use serde_derive::Deserialize;
 use libloading::{
         Library,
