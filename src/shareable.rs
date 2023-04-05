@@ -39,15 +39,17 @@
 ///     unsafe fn send_ptr(ptr: *mut Self, plugin: &crate::Plugin) {
 ///         panic!("Try to limit this function's use inside Rust!")
 ///     }
+/// 
+///     // implement the rest of the trait's functions...
 /// }
 /// ```
-pub trait Shareable<T>
+pub trait Shareable
 where
-    T: Send + Sync + ?Sized
+    Self: Send + Sync + Sized
 {
-    /// Sends `self` into the plugin.
+    /// Sends `self` into the plugin given.
     fn send(&mut self, plugin: &crate::Plugin);
-    
+
     /// Sends `self` as a pointer (`ptr`) to the plugin given.
     /// This function is marked `unsafe` because pointer dereferencing
     /// and sizes are
