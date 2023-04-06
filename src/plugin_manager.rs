@@ -15,7 +15,7 @@
 */
 
 extern crate libloading;
-use std::{ffi::{c_void, c_int, OsStr}, env};
+use std::{ffi::{c_void, c_int, OsStr}, env, fs};
 use libloading::Symbol;
 use crate::error::VPluginError;
 
@@ -51,8 +51,11 @@ pub type VHook = unsafe extern "C" fn(*mut c_void) -> c_int;
 impl PluginManager {
         /// Creates a new, empty PluginManager and returns it.
         pub fn new() -> Self {
+                let dir = env::temp_dir().join("vplugin");
+                fs::create_dir(dir).expect("Unable to create VPlugin directory.");
+                
                 Self {
-                        entry  : String::from("vplugin_init"),
+                        entry  : String::from("vplugin_init\0"),
                         running: false, /* No plugins running */
                         errcode: 0
                 }
