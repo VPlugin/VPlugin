@@ -15,7 +15,7 @@
 */
 
 extern crate libloading;
-use std::{ffi::{c_void, c_int, OsString, OsStr}, env, fs, os::unix::prelude::OsStrExt};
+use std::{ffi::{c_void, c_int, CString, OsStr}, env, fs};
 use libloading::Symbol;
 use crate::error::VPluginError;
 
@@ -28,7 +28,7 @@ use super::plugin::Plugin;
 /// 
 #[repr(C)]
 pub struct PluginManager {
-        entry: OsString
+        entry: CString
 }
 
 /// ## VHook
@@ -53,7 +53,7 @@ impl PluginManager {
                 fs::create_dir(dir).expect("Unable to create VPlugin directory.");
                 
                 Self {
-                        entry  : OsString::from("vplugin_init")
+                        entry  : CString::new("vplugin_init").expect("CString::new error")
                 }
         }
 
@@ -83,7 +83,7 @@ impl PluginManager {
         /// You probably want to set this to something unique to your application,
         /// like `appname_init`.
         pub fn set_entry_point(&mut self, entry_point: &str) {
-                self.entry = OsString::from(entry_point)
+                self.entry = CString::new(entry_point).expect("CString::new error")
         }
 
         /// Returns a hook from the plugin specified.
@@ -145,7 +145,7 @@ impl PluginManager {
 
                         let ___result = plugin_entry();
                         if ___result != 0 {
-                                log::error!("Couldn't start plugin: Entry point '{}' did not return success", self.entry.to_string_lossy());
+                                log::error!("Couldn't start plugin: Entry point '{}' did not return success", self.entry.as_c_str().to_string_lossy());
                                 return Err(VPluginError::FailedToInitialize);
                         }
                 }
