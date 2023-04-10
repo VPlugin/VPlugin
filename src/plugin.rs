@@ -86,7 +86,7 @@ pub struct PluginMetadata {
 pub struct Plugin {
         // Metadata about the plugin, will be None if the plugin
         // has not loaded its metadata yet.
-        pub metadata       : PluginMetadata,
+        pub metadata       : LaterInitialized<PluginMetadata>,
         pub(crate) filename: String,
         pub(crate) is_valid: bool,
         pub(crate) started : bool,
@@ -230,24 +230,14 @@ impl Plugin {
                 };
                 Self::extract_archive_files(archive);
 
-                let mut plugin = Self {
-                        metadata: PluginMetadata {
-                                description: None,
-                                version: "0.0.0".into(),
-                                name: "NULL".into(),
-                                filename: "-".into(),
-                                objfile: "-".into()
-                        },
+                let plugin = Self {
+                        metadata: initialize_later!(),
                         raw     : initialize_later!(),
                         filename: filename.into(),
                         is_valid: false,
                         started : false,
                 };
 
-                #[allow(deprecated)]
-                if let Err(e) = plugin.load_metadata() {
-                        return Err(e);
-                }
                 Ok(plugin)
         }
 
@@ -297,7 +287,7 @@ impl Plugin {
                                 fs::create_dir_all(
                                         env::temp_dir()
                                         .join("vplugin")
-                                        .join(&plugin.metadata.name)
+                                        .join(&plugin.metadata.as_ref().unwrap().name)
                                 ).expect("Cannot create plugin directory!");
                         }
                 }
@@ -330,7 +320,7 @@ impl Plugin {
                 if !self.is_valid {
                         log::error!(
                                 "Attempted to start plugin '{}', which is not marked as valid.",
-                                self.get_metadata().name
+                                self.get_metadata().as_ref().unwrap().name
                         );
                         return Err(VPluginError::InvalidPlugin);
                 }
@@ -433,7 +423,7 @@ impl Plugin {
                                         init_now!(Library::new(plugin_dir_name.join(&v.objfile)).unwrap())
                                 };
                                 self.is_valid = true;
-                                self.metadata = v;
+                                self.metadata = init_now!(v);
 
                                 Ok(())
                         },
@@ -446,7 +436,7 @@ impl Plugin {
 
         /// Returns a reference to the plugin metadata, if loaded.
         /// Otherwise, `None` is returned.
-        pub fn get_metadata(&self) -> &PluginMetadata {
+        pub fn get_metadata(&self) -> &Option<PluginMetadata> {
                 &self.metadata
         }
 
@@ -482,7 +472,7 @@ impl Plugin {
                                 log::warn!(
                                         target: "Destructor",
                                         "Plugin {} does not have a destructor. Force terminate if needed.",
-                                        self.get_metadata().name
+                                        self.get_metadata().as_ref().unwrap().name
                                 );
                                 return Err(VPluginError::InvalidPlugin)
                             },
@@ -496,6 +486,7 @@ impl Plugin {
                         self.is_valid = false;
                         self.raw      = None;
                         self.filename = String::new();
+                        self.metadata = None;
                 }
                 Ok(())
         }
@@ -550,20 +541,28 @@ impl Plugin {
                                 .is_ok()
                 }
         }
+
+        /// Returns whether the plugin metadata is available
+        /// and loaded. You can use this to avoid unwrap()'ing
+        /// on invalid values.
+        #[inline(always)]
+        pub fn is_metadata_loaded(&self) -> bool {
+                self.metadata.is_some()
+        }
 }
 
 impl Drop for Plugin {
         fn drop(&mut self) {
                 let plugin_dir_name = env::temp_dir()
                         .join("vplugin")
-                        .join(&self.metadata.name);
+                        .join(&self.metadata.as_ref().unwrap().name);
 
                 match std::fs::remove_dir_all(&plugin_dir_name) {
                         Err(e) => {
                                 log::warn!(
                                         "Couldn't remove directory '{}' corresponding to plugin '{}': {}",
                                         plugin_dir_name.display(),
-                                        self.metadata.name,
+                                        self.metadata.as_ref().unwrap().name,
                                         e.to_string()
                                 )
                         },
