@@ -50,17 +50,7 @@ impl PluginManager {
         /// Creates a new, empty PluginManager and returns it.
         pub fn new() -> Self {
                 let dir = env::temp_dir().join("vplugin");
-                match std::fs::create_dir(&dir) {
-                        Err(e) => match e.kind() {
-                                ErrorKind::AlreadyExists => {
-                                        std::fs::remove_dir_all(&dir);
-                                        std::fs::create_dir(&dir);
-                                        env::set_current_dir(env::temp_dir().join("vplugin")).unwrap()
-                                },
-                                _ => log::error!("Couldn't create VPlugin directory: {}", e.to_string()),
-                        }
-                        Ok(_) => env::set_current_dir(env::temp_dir().join("vplugin")).unwrap()
-                }
+                fs::create_dir(dir).expect("Unable to create VPlugin directory.");
                 
                 Self {
                         entry  : CString::new("vplugin_init").expect("CString::new error")
