@@ -15,7 +15,7 @@
 */
 
 extern crate libloading;
-use std::{ffi::{c_void, c_int, CString, OsStr}, env, fs};
+use std::{ffi::{c_void, c_int, CString, OsStr}, env, fs, io::ErrorKind};
 use libloading::Symbol;
 use crate::error::VPluginError;
 
@@ -50,7 +50,16 @@ impl PluginManager {
         /// Creates a new, empty PluginManager and returns it.
         pub fn new() -> Self {
                 let dir = env::temp_dir().join("vplugin");
-                fs::create_dir(dir).expect("Unable to create VPlugin directory.");
+                match fs::create_dir(dir) {
+                        Err(e) => {
+                                if let ErrorKind::AlreadyExists = e.kind() {
+                                        ()
+                                } else {
+                                        panic!("Unable to create VPlugin directory.")
+                                }
+                        },
+                        _ => ()
+                }
                 
                 Self {
                         entry  : CString::new("vplugin_init").expect("CString::new error")
