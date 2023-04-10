@@ -50,6 +50,7 @@ impl PluginManager {
         /// Creates a new, empty PluginManager and returns it.
         pub fn new() -> Self {
                 let dir = env::temp_dir().join("vplugin");
+<<<<<<< HEAD
                 match std::fs::create_dir(&dir) {
                         Err(e) => match e.kind() {
                                 ErrorKind::AlreadyExists => {
@@ -61,6 +62,9 @@ impl PluginManager {
                         }
                         Ok(_) => env::set_current_dir(env::temp_dir().join("vplugin")).unwrap()
                 }
+=======
+                fs::create_dir(dir).expect("Unable to create VPlugin directory.");
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                 
                 Self {
                         entry  : CString::new("vplugin_init").expect("CString::new error")

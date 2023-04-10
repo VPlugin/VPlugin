@@ -86,7 +86,11 @@ pub struct PluginMetadata {
 pub struct Plugin {
         // Metadata about the plugin, will be None if the plugin
         // has not loaded its metadata yet.
+<<<<<<< HEAD
         pub metadata       : LaterInitialized<PluginMetadata>,
+=======
+        pub metadata       : PluginMetadata,
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
         pub(crate) filename: String,
         pub(crate) is_valid: bool,
         pub(crate) started : bool,
@@ -230,14 +234,32 @@ impl Plugin {
                 };
                 Self::extract_archive_files(archive);
 
+<<<<<<< HEAD
                 let plugin = Self {
                         metadata: initialize_later!(),
+=======
+                let mut plugin = Self {
+                        metadata: PluginMetadata {
+                                description: None,
+                                version: "0.0.0".into(),
+                                name: "NULL".into(),
+                                filename: "-".into(),
+                                objfile: "-".into()
+                        },
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                         raw     : initialize_later!(),
                         filename: filename.into(),
                         is_valid: false,
                         started : false,
                 };
 
+<<<<<<< HEAD
+=======
+                #[allow(deprecated)]
+                if let Err(e) = plugin.load_metadata() {
+                        return Err(e);
+                }
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                 Ok(plugin)
         }
 
@@ -287,7 +309,11 @@ impl Plugin {
                                 fs::create_dir_all(
                                         env::temp_dir()
                                         .join("vplugin")
+<<<<<<< HEAD
                                         .join(&plugin.metadata.as_ref().unwrap().name)
+=======
+                                        .join(&plugin.metadata.name)
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                                 ).expect("Cannot create plugin directory!");
                         }
                 }
@@ -320,7 +346,11 @@ impl Plugin {
                 if !self.is_valid {
                         log::error!(
                                 "Attempted to start plugin '{}', which is not marked as valid.",
+<<<<<<< HEAD
                                 self.get_metadata().as_ref().unwrap().name
+=======
+                                self.get_metadata().name
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                         );
                         return Err(VPluginError::InvalidPlugin);
                 }
@@ -423,7 +453,11 @@ impl Plugin {
                                         init_now!(Library::new(plugin_dir_name.join(&v.objfile)).unwrap())
                                 };
                                 self.is_valid = true;
+<<<<<<< HEAD
                                 self.metadata = init_now!(v);
+=======
+                                self.metadata = v;
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
 
                                 Ok(())
                         },
@@ -436,7 +470,11 @@ impl Plugin {
 
         /// Returns a reference to the plugin metadata, if loaded.
         /// Otherwise, `None` is returned.
+<<<<<<< HEAD
         pub fn get_metadata(&self) -> &Option<PluginMetadata> {
+=======
+        pub fn get_metadata(&self) -> &PluginMetadata {
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                 &self.metadata
         }
 
@@ -472,7 +510,11 @@ impl Plugin {
                                 log::warn!(
                                         target: "Destructor",
                                         "Plugin {} does not have a destructor. Force terminate if needed.",
+<<<<<<< HEAD
                                         self.get_metadata().as_ref().unwrap().name
+=======
+                                        self.get_metadata().name
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                                 );
                                 return Err(VPluginError::InvalidPlugin)
                             },
@@ -486,7 +528,10 @@ impl Plugin {
                         self.is_valid = false;
                         self.raw      = None;
                         self.filename = String::new();
+<<<<<<< HEAD
                         self.metadata = None;
+=======
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                 }
                 Ok(())
         }
@@ -541,6 +586,7 @@ impl Plugin {
                                 .is_ok()
                 }
         }
+<<<<<<< HEAD
 
         /// Returns whether the plugin metadata is available
         /// and loaded. You can use this to avoid unwrap()'ing
@@ -549,20 +595,30 @@ impl Plugin {
         pub fn is_metadata_loaded(&self) -> bool {
                 self.metadata.is_some()
         }
+=======
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
 }
 
 impl Drop for Plugin {
         fn drop(&mut self) {
                 let plugin_dir_name = env::temp_dir()
                         .join("vplugin")
+<<<<<<< HEAD
                         .join(&self.metadata.as_ref().unwrap().name);
+=======
+                        .join(&self.metadata.name);
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
 
                 match std::fs::remove_dir_all(&plugin_dir_name) {
                         Err(e) => {
                                 log::warn!(
                                         "Couldn't remove directory '{}' corresponding to plugin '{}': {}",
                                         plugin_dir_name.display(),
+<<<<<<< HEAD
                                         self.metadata.as_ref().unwrap().name,
+=======
+                                        self.metadata.name,
+>>>>>>> 08e22ee (I FUCKING HATE GIT)
                                         e.to_string()
                                 )
                         },
