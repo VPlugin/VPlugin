@@ -93,10 +93,6 @@ mod plugin_manager;
 mod error;
 pub mod shareable; // Are you happy `rustc`?
 
-use std::process::{Termination, ExitCode};
-
-use error::VPluginError;
-
 /// Reexports of VPlugin's types.
 pub use plugin_manager::*;
 pub use plugin::*;
@@ -104,45 +100,3 @@ pub use shareable::Shareable;
 
 /// Reexporting libloading to assist projects that need the library.
 pub use libloading;
-
-/// Result type for VPlugin.
-/// 
-/// This type is used within VPlugin as an alternative to the default
-/// `Result`. The main reason for this change is to always return a
-/// [`VPluginError`](crate::error::VPluginError) as an error, but allow any
-/// type to be returned as a success value,
-/// similar to how [`io::Result`](std::io::Result) works.
-/// 
-/// ## Examples
-/// ```
-/// extern crate vplugin;
-/// 
-/// // vplugin::Result implements Termination
-/// fn main() -> vplugin::Result<()> {
-///     vplugin::Result::Ok(())
-/// }
-/// ```
-pub enum Result<T> {
-    Ok(T),
-    Err(VPluginError)
-}
-
-impl Termination for crate::Result<()> {
-    fn report(self) -> std::process::ExitCode {
-        ExitCode::SUCCESS
-    }
-}
-
-impl<T> Result<T> {
-    /// Returns the `Ok` value, or panics if `self` is `Err`.
-    /// 
-    /// `self` will be consumed after this call.
-    pub fn unwrap(self) -> T {
-        match self {
-            Self::Ok(t) => t,
-            Self::Err(e) => {
-                panic!("Attemptd to Result::unwrap() an Err value: ", &e);
-            }
-        }
-    }
-}
