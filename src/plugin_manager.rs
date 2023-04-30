@@ -15,7 +15,7 @@
 */
 
 extern crate libloading;
-use std::{ffi::{c_void, c_int, CString, OsStr}, env, fs, io::ErrorKind};
+use std::{ffi::{c_void, c_int, CString, OsStr}, env, fs, io::ErrorKind, path::PathBuf};
 use libloading::Symbol;
 use crate::error::VPluginError;
 
@@ -74,10 +74,7 @@ impl PluginManager {
         /// 
         /// ## Panics
         /// May panic if `filename` is not a valid string.
-        pub fn load_plugin<P: Copy + Into<String> + AsRef<OsStr>>(&mut self, filename: P) -> Result<Plugin, VPluginError> {
-                if filename.into().is_empty() {
-                        return Err(VPluginError::ParametersError)
-                }
+        pub fn load_plugin(&mut self, filename: PathBuf) -> Result<Plugin, VPluginError> {
                 Plugin::load(filename)
         }
 

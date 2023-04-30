@@ -26,6 +26,7 @@ use std::fs::{
         self,
         File
 };
+use std::path::PathBuf;
 use serde_derive::Deserialize;
 use libloading::{
         Library,
@@ -74,7 +75,7 @@ pub struct PluginMetadata {
         pub description: Option<String>,
         pub version    : String,
         pub name       : String,
-        pub filename   : String,
+        pub filename   : PathBuf,
         pub objfile    : String
 }
 
@@ -87,7 +88,7 @@ pub struct Plugin {
         // Metadata about the plugin, will be None if the plugin
         // has not loaded its metadata yet.
         pub metadata       : PluginMetadata,
-        pub(crate) filename: String,
+        pub(crate) filename: PathBuf,
         pub(crate) is_valid: bool,
         pub(crate) started : bool,
         pub(crate) raw     : LaterInitialized<Library>,
@@ -175,7 +176,7 @@ impl PluginMetadata {
                         );
                 }
 
-                plugin_metadata.filename = "metadata.toml".to_owned();
+                plugin_metadata.filename = "metadata.toml".to_owned().into();
                 plugin_metadata.version  = data_raw.metadata.version;
                 plugin_metadata.name     = data_raw.metadata.name;
                 plugin_metadata.objfile  = data_raw.metadata.objfile;
@@ -185,16 +186,15 @@ impl PluginMetadata {
 }
 
 impl Plugin {
-        fn load_archive<S: Copy + Into<String> + AsRef<OsStr>>(filename: S) -> Result<Self, VPluginError> {
-                log::trace!("Loading plugin: {}.", &filename.into());
-                let tmp = filename.into();
-                let fname = std::path::Path::new(&tmp);
+        fn load_archive(filename: PathBuf) -> Result<Self, VPluginError> {
+                log::trace!("Loading plugin: {}.", &filename.display());
+                let fname = std::path::Path::new(&filename);
                 let file = match fs::File::open(fname) {
                         Ok(val) => val,
                         Err(e) => {
                                 log::error!(
                                         "Couldn't load {}: {} (error {})",
-                                        filename.into(),
+                                        filename.display(),
                                         e.to_string(),
                                         e.raw_os_error().unwrap_or(0)
                                 );
@@ -220,7 +220,7 @@ impl Plugin {
                 }
 
                 /* Uncompressing the archive. */
-                log::trace!("Uncompressing plugin {}", filename.into());
+                log::trace!("Uncompressing plugin {}", filename.display());
                 let archive = match zip::ZipArchive::new(file) {
                         Ok (v) => v,
                         Err(e) => {
@@ -277,7 +277,7 @@ impl Plugin {
         /// Loads a plugin into memory and returns it.
         /// After 0.2.0, metadata is also loaded in this call so avoid calling it
         /// again (For your convenience, it has been marked as deprecated).
-        pub fn load<S: Copy + Into<String> + AsRef<OsStr>>(filename: S) -> Result<Plugin, VPluginError> {
+        pub fn load(filename: PathBuf) -> Result<Plugin, VPluginError> {
                 let mut plugin = match Self::load_archive(filename) {
                         Err(e) => {
                                 log::error!("Couldn't load archive, stopping here.");
@@ -438,7 +438,7 @@ impl Plugin {
                                 Ok(())
                         },
                         Err(e) => {
-                                log::error!("Couldn't load metadata ({}): {}", self.filename, e.to_string());
+                                log::error!("Couldn't load metadata ({}): {}", self.filename.display(), e.to_string());
                                 Err(e)
                         }
                 }
@@ -495,7 +495,7 @@ impl Plugin {
                 if cfg!(feature = "non_reusable_plugins") {
                         self.is_valid = false;
                         self.raw      = None;
-                        self.filename = String::new();
+                        self.filename = PathBuf::new();
                 }
                 Ok(())
         }
