@@ -1,3 +1,6 @@
+## Release v0.4.0
+- All paths will now use `PathBuf`.
+
 ## Release v0.3.0
 - Removed `PluginManager::shutdown`, moved all necessary code into the drop implementation.
 - VPlugin will no longer reject running in a root environment. It's up to the library user to decide whether
