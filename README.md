@@ -5,6 +5,6 @@ Main reasons are:
 - Unsafe, let's face it, VPlugin works entirely on unsafety. Also anyone could just hijack your process and there's not much you could do.
 - Unsuited for Rust, the ownership model just doesn't play well with VPlugin.
 - Better solutions exist. Lua worked for me better and I also wrote my own code execution sandbox for situations like this (No, it won't be public, it's intended for private use).
-- Final: I (@tseli0s) the enforced 2FA policy that recently took place. I plan to move away from the platform in a few months, and so should you.
+- Final: I (@tseli0s) hate the enforced 2FA policy that recently took place. I plan to move away from the platform in a few months, and so should you.
 
 That's all, bye :)
